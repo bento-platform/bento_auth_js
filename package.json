@@ -1,0 +1,48 @@
+{
+  "name": "bento_auth_js",
+  "version": "1.0.0",
+  "description": "Authentication library for web applications of Bento-Platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "npx tsc",
+    "lint": "npx eslint src",
+    "buildpack": "rm ./packs/*.tgz && tsc && npm pack --pack-destination ./packs",
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bento-platform/bento_auth_js.git"
+  },
+  "keywords": [
+    "Bento",
+    "Auth"
+  ],
+  "author": "Sanjeev Lakhwani",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bento-platform/bento_auth_js/issues"
+  },
+  "homepage": "https://github.com/bento-platform/bento_auth_js#readme",
+  "peerDependencies": {
+    "@reduxjs/toolkit": "^1.9.7",
+    "react": ">=16.0.0",
+    "react-redux": "^7.2.9",
+    "react-router-dom": "^5.3.4",
+    "redux": "^4.2.0"
+  },
+  "dependencies": {
+    "jose": "^4.14.6"
+  },
+  "devDependencies": {
+    "@reduxjs/toolkit": "^1.9.7",
+    "@types/react": "18.2.42",
+    "@types/react-router-dom": "^5.3.3",
+    "@typescript-eslint/eslint-plugin": "^6.13.2",
+    "@typescript-eslint/parser": "^6.13.2",
+    "eslint": "^8.55.0",
+    "react-redux": "^7.2.9",
+    "react-router-dom": "^5.3.4",
+    "redux": "^4.2.0",
+    "typescript": "^5.3.3"
+  }
+}
