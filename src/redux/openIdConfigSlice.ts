@@ -1,9 +1,10 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { RootState } from "./store";
 
 // Async actions using createAsyncThunk
 export const fetchOpenIdConfiguration = createAsyncThunk(
     "openIdConfig/fetchOpenIdConfiguration",
-    async ({ openIdConfigUrl }) => {
+    async (openIdConfigUrl: string) => {
         const response = await fetch(openIdConfigUrl);
         if (response.ok) {
             return await response.json();
@@ -13,13 +14,19 @@ export const fetchOpenIdConfiguration = createAsyncThunk(
     },
     {
         condition: (_, { getState }) => {
-            const { isFetching, data, expiry } = getState().openIdConfiguration;
+            const state = getState() as RootState;
+            const { isFetching, data, expiry } = state.openIdConfiguration;
             return !isFetching && (!data || !expiry || Date.now() > expiry * 1000);
         },
     }
 );
 
-const initialState = {
+type OIDCSliceState = {
+    isFetching: boolean;
+    data: any;
+    expiry: number | null;
+};
+const initialState: OIDCSliceState = {
     isFetching: false,
     data: null,
     expiry: null,

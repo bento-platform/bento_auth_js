@@ -1,24 +1,33 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { decodeJwt } from "jose";
 
 import { buildUrlEncodedData } from "../utils";
 import { LS_BENTO_WAS_SIGNED_IN, setLSNotSignedIn } from "../performAuth";
 import { makeResourceKey } from "../resources";
+import { RootState } from "./store";
 
+type TokenHandoff = {
+    code: string;
+    clientId: string;
+    authCallbackUrl: string;
+    verifier: string;
+}
 export const tokenHandoff = createAsyncThunk(
     "auth/TOKEN_HANDOFF",
-    async ({ code, verifier, clientId, authCallbackUrl }, { getState }) => {
-        const url = getState().openIdConfiguration.data?.["token_endpoint"];
+    async (token: TokenHandoff, { getState }) => {
+    // async ({ code, verifier, clientId, authCallbackUrl }, { getState }) => {
+        const state = getState() as RootState;
+        const url = state.openIdConfiguration.data?.["token_endpoint"];
 
         const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: buildUrlEncodedData({
                 grant_type: "authorization_code",
-                code,
-                client_id: clientId,
-                redirect_uri: authCallbackUrl,
-                code_verifier: verifier,
+                code: token.code,
+                client_id: token.clientId,
+                redirect_uri: token.authCallbackUrl,
+                code_verifier: token.verifier,
             }),
         });
 
@@ -29,19 +38,20 @@ export const tokenHandoff = createAsyncThunk(
 
 export const refreshTokens = createAsyncThunk(
     "auth/REFRESH_TOKENS",
-    async ({ clientId }, { getState }) => {
-        const url = getState().openIdConfiguration.data["token_endpoint"];
+    async (clientId: string , { getState }) => {
+        const state = getState() as RootState;
+        const url = state.openIdConfiguration.data["token_endpoint"];
 
         const response = await fetch(url, {
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
-                Authorization: `Bearer ${getState().auth.accessToken}`,
+                Authorization: `Bearer ${state.auth.accessToken}`,
             },
             body: buildUrlEncodedData({
                 grant_type: "refresh_token",
                 client_id: clientId,
-                refresh_token: getState().auth.refreshToken,
+                refresh_token: state.auth.refreshToken,
             }),
         });
 
@@ -49,33 +59,39 @@ export const refreshTokens = createAsyncThunk(
         return await response.json();
     },
     {
-        condition: (_, { getState }) => {
-            const { auth, openIdConfiguration } = getState();
+        condition: (_: string, { getState }): boolean => {
+            const { auth, openIdConfiguration } = getState() as RootState;
             if (!openIdConfiguration.data?.["token_endpoint"]) {
                 console.error("No token endpoint available/No openIdConfiguration data");
                 return false;
             }
             const { isRefreshingTokens, refreshToken } = auth;
-            return !isRefreshingTokens && refreshToken;
+            return !isRefreshingTokens && refreshToken !== null;
         },
     }
 );
 
+type ResourcePermission = {
+    resource: string;
+    authUrl: string;
+}
 export const fetchResourcePermissions = createAsyncThunk(
     "auth/FETCH_RESOURCE_PERMISSIONS",
-    async ({ resource, authUrl }, { getState }) => {
+    async ({ resource, authUrl }: ResourcePermission, { getState }) => {
         const url = `${authUrl}/policy/permissions`;
+        const { auth } = getState() as RootState;
         const response = await fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${getState().auth.accessToken}` },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.accessToken}` },
             body: JSON.stringify({ resources: resource }),
         });
         return await response.json();
     },
     {
         condition: ({ resource, authUrl }, { getState }) => {
+            const { auth } = getState() as RootState;
             const key = makeResourceKey(resource);
-            const rp = getState().auth.resourcePermissions[key];
+            const rp = auth.resourcePermissions?.[key];
             return !rp?.isFetching;
         },
     }
@@ -89,7 +105,34 @@ const nullSession = {
     refreshToken: null,
 };
 
-const initialState = {
+type AuthSliceState = {
+    loading: boolean;
+    hasAttempted: boolean;
+
+    isHandingOffCodeForToken: boolean;
+    handoffError: string;
+
+    isRefreshingTokens: boolean;
+    tokensRefreshError: string;
+
+    resourcePermissions: {
+        [name: string]: {
+            isFetching: boolean;
+            hasAttempted: boolean;
+            error: string;
+            permissions: string[];
+        };
+    };
+
+    sessionExpiry?: number | null;
+    idToken?: string | null;
+    idTokenContents?: {} | null;
+
+    accessToken?: string | null;
+    refreshToken?: string | null;
+};
+const initialState: AuthSliceState = {
+    loading: false,
     hasAttempted: false,
 
     isHandingOffCodeForToken: false,
@@ -100,19 +143,27 @@ const initialState = {
 
     // Below is token/token-derived data
 
-    sessionExpiry: null,
-    idToken: null,
-    idTokenContents: null,
+    // sessionExpiry: null,
+    // idToken: null,
+    // idTokenContents: null,
 
     //  - NEVER dehydrate the below items to localStorage; it is a security risk!
-    accessToken: null,
-    refreshToken: null,
+    // accessToken: null,
+    // refreshToken: null,
 
     // Below is permissions caching for controlling how the UI appears for different resources
     //  - It's in this reducer since signing out / losing a token will clear permissions caches.
     resourcePermissions: {},
 };
 
+type AuthPayload = {
+    access_token: string;
+    expires_in: number;
+    id_token: string;
+    refresh_token: string;
+    data: {};
+}
+type AuthPayloadAction = PayloadAction<AuthPayload>;
 export const authSlice = createSlice({
     name: "auth",
     initialState,

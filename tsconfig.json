@@ -2,7 +2,7 @@
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig to read more about this file */
 
-    "target": "es5",                            /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
+    "target": "es6",                            /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */
 
     /* Modules */
     "module": "es6",                            /* Specify what module code is generated. */
@@ -11,6 +11,7 @@
     "lib": [
       "es2017",
       "dom",
+      "ES6"
     ],
 
     /* JavaScript Support */

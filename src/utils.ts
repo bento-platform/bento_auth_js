@@ -1,8 +1,3 @@
-import { useEffect, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { makeResourceKey } from "./resources";
-import { fetchResourcePermissions } from "./redux/authSlice";
-
 export const buildUrlEncodedData = (obj: Object) =>
     Object.entries(obj).reduce((params, [k, v]) => {
         if (v === null || v === undefined) return params;
@@ -10,45 +5,13 @@ export const buildUrlEncodedData = (obj: Object) =>
         return params;
     }, new URLSearchParams());
 
-export const getIsAuthenticated = (idTokenContents) =>
+interface IdTokenContents {
+    exp: number
+};
+export const getIsAuthenticated = (idTokenContents: IdTokenContents) =>
     !!idTokenContents && Math.round(new Date().getTime() / 1000) < idTokenContents.exp;
 
-export const makeAuthorizationHeader = (token) => (token ? { Authorization: `Bearer ${token}` } : {});
-
-// TODO: move hooks to own file
-
-export const useAuthorizationHeader = () => {
-    const { accessToken } = useSelector((state) => state.auth);
-    return useMemo(() => (accessToken ? { Authorization: `Bearer ${accessToken}` } : {}), [accessToken]);
-};
-
-export const useResourcePermissions = (resource, authUrl) => {
-    const dispatch = useDispatch();
-
-    const haveAuthorizationService = !!authUrl;
-
-    useEffect(() => {
-        if (!haveAuthorizationService) return;
-        dispatch(fetchResourcePermissions({ resource, authUrl }));
-    }, [haveAuthorizationService, resource, authUrl]);
-
-    const key = useMemo(() => makeResourceKey(resource), [resource]);
-
-    const { permissions, isFetching, hasAttempted, error } =
-        useSelector((state) => state.auth.resourcePermissions[key]) ?? {};
-
-    return {
-        permissions: permissions ?? [],
-        isFetching: isFetching ?? false,
-        hasAttempted: hasAttempted ?? false,
-        error: error ?? "",
-    };
-};
-
-export const useHasResourcePermission = (resource: string, authUrl: string, permission: string) => {
-    const { permissions, isFetching } = useResourcePermissions(resource, authUrl) ?? {};
-    return { isFetching, hasPermission: permissions.includes(permission) };
-};
+export const makeAuthorizationHeader = (token: string) => (token ? { Authorization: `Bearer ${token}` } : {});
 
 export const recursiveOrderedObject = (x: any): any => {
     if (Array.isArray(x)) {

@@ -7,7 +7,7 @@
   "scripts": {
     "build": "npx tsc",
     "lint": "npx eslint src",
-    "buildpack": "rm ./packs/*.tgz && tsc && npm pack --pack-destination ./packs",
+    "buildpack": "rm ./packs/*.tgz && tsc && npm pack --pack-destination ./packs"
   },
   "repository": {
     "type": "git",
@@ -24,6 +24,7 @@
   },
   "homepage": "https://github.com/bento-platform/bento_auth_js#readme",
   "peerDependencies": {
+    "antd": "^3.26.20",
     "@reduxjs/toolkit": "^1.9.7",
     "react": ">=16.0.0",
     "react-redux": "^7.2.9",

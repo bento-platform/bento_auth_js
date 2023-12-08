@@ -1,3 +1,4 @@
+import {message} from "antd";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useLocation } from "react-router-dom";
@@ -5,11 +6,12 @@ import { useHistory, useLocation } from "react-router-dom";
 import { tokenHandoff } from "./redux/authSlice";
 import { buildUrlEncodedData, getIsAuthenticated, popLocalStorageItem, nop } from "./utils";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
+import { RootState } from "./redux/store";
 
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";
 export const LS_BENTO_POST_AUTH_REDIRECT = "BENTO_POST_AUTH_REDIRECT";
 
-export const createAuthURL = async (authorizationEndpoint, clientId, authCallbackUrl, scope = "openid email") => {
+export const createAuthURL = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
     const state = secureRandomString();
     const verifier = secureRandomString();
 
@@ -34,8 +36,8 @@ export const createAuthURL = async (authorizationEndpoint, clientId, authCallbac
 
 const DEFAULT_REDIRECT = "/overview";
 
-export const performAuth = async (authorizationEndpoint, clientId, authCallbackUrl, scope = "openid email") => {
-    window.location = await createAuthURL(authorizationEndpoint, clientId, authCallbackUrl, scope);
+export const performAuth = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
+    window.location.href = await createAuthURL(authorizationEndpoint, clientId, authCallbackUrl, scope);
 };
 
 const defaultAuthCodeCallback = async (
@@ -67,8 +69,8 @@ export const useHandleCallback = (
     const dispatch = useDispatch();
     const history = useHistory();
     const location = useLocation();
-    const oidcConfig = useSelector((state) => state.openIdConfiguration.data);
-    const idTokenContents = useSelector((state) => state.auth.idTokenContents);
+    const oidcConfig = useSelector((state: RootState) => state.openIdConfiguration.data);
+    const idTokenContents = useSelector((state: RootState) => state.auth.idTokenContents);
     const isAuthenticated = getIsAuthenticated(idTokenContents);
 
     useEffect(() => {
