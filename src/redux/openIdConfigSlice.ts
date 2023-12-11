@@ -4,12 +4,12 @@ import { RootState } from "./store";
 // Async actions using createAsyncThunk
 export const fetchOpenIdConfiguration = createAsyncThunk(
     "openIdConfig/fetchOpenIdConfiguration",
-    async (openIdConfigUrl: string) => {
+    async (openIdConfigUrl: string, { rejectWithValue }) => {
         const response = await fetch(openIdConfigUrl);
         if (response.ok) {
             return await response.json();
         } else {
-            throw new Error("Could not fetch identity provider configuration");
+            return rejectWithValue("Could not fetch identity provider configuration");
         }
     },
     {

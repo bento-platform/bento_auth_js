@@ -13,12 +13,10 @@ type TokenHandoffParams = {
     verifier: string;
 };
 type TokenHandoffPayload = {
-    data: {
-        access_token: string,
-        expires_in: number,
-        id_token: string,
-        refresh_token: string,
-    },
+    access_token: string,
+    expires_in: number,
+    id_token: string,
+    refresh_token: string,
     error?: {
         error?: any;
         error_description?: string;
@@ -48,7 +46,7 @@ export const tokenHandoff = createAsyncThunk<
         });
 
         const body = await response.json();
-        if (response.status !== 200) {
+        if (!response.ok) {
             return rejectWithValue(body as TokenHandoffError);
         }
         return body as TokenHandoffPayload;
@@ -201,7 +199,7 @@ export const authSlice = createSlice({
                     expires_in: exp,
                     id_token: idToken,
                     refresh_token: refreshToken,
-                } = payload.data;
+                } = payload;
 
                 // Reset hasAttempted for user-dependent data if we just signed in
                 state.hasAttempted = !state.idTokenContents && idToken ? false : state.hasAttempted;
