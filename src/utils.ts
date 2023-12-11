@@ -1,15 +1,15 @@
-export const buildUrlEncodedData = (obj: Object) =>
+import { JWTPayload } from "jose";
+
+export const buildUrlEncodedData = (obj: any) =>
     Object.entries(obj).reduce((params, [k, v]) => {
         if (v === null || v === undefined) return params;
         params.set(k, v.toString());
         return params;
     }, new URLSearchParams());
 
-interface IdTokenContents {
-    exp: number
-};
-export const getIsAuthenticated = (idTokenContents: IdTokenContents) =>
-    !!idTokenContents && Math.round(new Date().getTime() / 1000) < idTokenContents.exp;
+
+export const getIsAuthenticated = (idTokenContents: JWTPayload | null | undefined) =>
+    !!idTokenContents && idTokenContents.exp && Math.round(new Date().getTime() / 1000) < idTokenContents.exp;
 
 export const makeAuthorizationHeader = (token: string) => (token ? { Authorization: `Bearer ${token}` } : {});
 

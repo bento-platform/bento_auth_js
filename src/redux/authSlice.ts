@@ -1,21 +1,37 @@
-import { PayloadAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import { decodeJwt } from "jose";
+import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import { JWTPayload, decodeJwt } from "jose";
 
 import { buildUrlEncodedData } from "../utils";
 import { LS_BENTO_WAS_SIGNED_IN, setLSNotSignedIn } from "../performAuth";
 import { makeResourceKey } from "../resources";
 import { RootState } from "./store";
 
-type TokenHandoff = {
+type TokenHandoffParams = {
     code: string;
     clientId: string;
     authCallbackUrl: string;
     verifier: string;
-}
-export const tokenHandoff = createAsyncThunk(
-    "auth/TOKEN_HANDOFF",
-    async (token: TokenHandoff, { getState }) => {
-    // async ({ code, verifier, clientId, authCallbackUrl }, { getState }) => {
+};
+type TokenHandoffPayload = {
+    data: {
+        access_token: string,
+        expires_in: number,
+        id_token: string,
+        refresh_token: string,
+    },
+    error?: {
+        error?: any;
+        error_description?: string;
+    };
+};
+type TokenHandoffError = TokenHandoffPayload;
+export const tokenHandoff = createAsyncThunk<
+    TokenHandoffPayload, 
+    TokenHandoffParams,
+    {
+        rejectValue: TokenHandoffError,
+    }>("auth/TOKEN_HANDOFF",
+    async (handoffParams, { getState, rejectWithValue }) => {
         const state = getState() as RootState;
         const url = state.openIdConfiguration.data?.["token_endpoint"];
 
@@ -24,19 +40,22 @@ export const tokenHandoff = createAsyncThunk(
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
             body: buildUrlEncodedData({
                 grant_type: "authorization_code",
-                code: token.code,
-                client_id: token.clientId,
-                redirect_uri: token.authCallbackUrl,
-                code_verifier: token.verifier,
+                code: handoffParams.code,
+                client_id: handoffParams.clientId,
+                redirect_uri: handoffParams.authCallbackUrl,
+                code_verifier: handoffParams.verifier,
             }),
         });
 
-        // Assuming the server responds with JSON
-        return await response.json();
+        const body = await response.json();
+        if (response.status !== 200) {
+            return rejectWithValue(body as TokenHandoffError);
+        }
+        return body as TokenHandoffPayload;
     }
 );
 
-export const refreshTokens = createAsyncThunk(
+export const refreshTokens = createAsyncThunk<any, string, {rejectValue: any}>(
     "auth/REFRESH_TOKENS",
     async (clientId: string , { getState }) => {
         const state = getState() as RootState;
@@ -71,13 +90,13 @@ export const refreshTokens = createAsyncThunk(
     }
 );
 
-type ResourcePermission = {
+type PermissionParams = {
     resource: string;
-    authUrl: string;
+    authzUrl: string;
 }
-export const fetchResourcePermissions = createAsyncThunk(
+export const fetchResourcePermissions = createAsyncThunk<any, PermissionParams, { rejectValue: any }>(
     "auth/FETCH_RESOURCE_PERMISSIONS",
-    async ({ resource, authUrl }: ResourcePermission, { getState }) => {
+    async ({ resource, authzUrl: authUrl }: PermissionParams, { getState }) => {
         const url = `${authUrl}/policy/permissions`;
         const { auth } = getState() as RootState;
         const response = await fetch(url, {
@@ -88,7 +107,7 @@ export const fetchResourcePermissions = createAsyncThunk(
         return await response.json();
     },
     {
-        condition: ({ resource, authUrl }, { getState }) => {
+        condition: ({ resource }, { getState }) => {
             const { auth } = getState() as RootState;
             const key = makeResourceKey(resource);
             const rp = auth.resourcePermissions?.[key];
@@ -126,7 +145,7 @@ type AuthSliceState = {
 
     sessionExpiry?: number | null;
     idToken?: string | null;
-    idTokenContents?: {} | null;
+    idTokenContents?: JWTPayload | null;
 
     accessToken?: string | null;
     refreshToken?: string | null;
@@ -156,14 +175,6 @@ const initialState: AuthSliceState = {
     resourcePermissions: {},
 };
 
-type AuthPayload = {
-    access_token: string;
-    expires_in: number;
-    id_token: string;
-    refresh_token: string;
-    data: {};
-}
-type AuthPayloadAction = PayloadAction<AuthPayload>;
 export const authSlice = createSlice({
     name: "auth",
     initialState,
@@ -190,7 +201,7 @@ export const authSlice = createSlice({
                     expires_in: exp,
                     id_token: idToken,
                     refresh_token: refreshToken,
-                } = payload;
+                } = payload.data;
 
                 // Reset hasAttempted for user-dependent data if we just signed in
                 state.hasAttempted = !state.idTokenContents && idToken ? false : state.hasAttempted;
@@ -202,21 +213,27 @@ export const authSlice = createSlice({
                 state.isHandingOffCodeForToken = false;
                 localStorage.setItem(LS_BENTO_WAS_SIGNED_IN, "true");
             })
-            .addCase(tokenHandoff.rejected, (state, { payload, error: errorProp }) => {
-                errorProp && console.error(errorProp);
-                let handoffError = errorProp.message ?? "Error handing off authorization code for token";
-
-                const { error, error_description: errorDesc } = payload.data ?? {};
-                if (error) {
-                    handoffError = `${error}: ${errorDesc}`;
+            .addCase(tokenHandoff.rejected, (state, action) => {
+                let handoffError = "";
+                if (action.payload) {
+                    const { error, error_description: errorDesc } = action.payload.error ?? {};
+                    if (error) {
+                        handoffError = `${error}: ${errorDesc}`
+                    }
+                } else {
+                    handoffError = action.error.message ?? "Error handing off authorization code for token";
                 }
+
                 console.error(handoffError);
                 state.handoffError = handoffError;
                 state.resourcePermissions = {};
 
-                Object.keys(nullSession).forEach((key) => {
-                    state[key] = nullSession[key];
-                });
+                // Set null session
+                state.sessionExpiry = null,
+                state.idToken = null,
+                state.idTokenContents = null,
+                state.accessToken = null,
+                state.refreshToken = null,
 
                 state.loading = false;
                 state.isHandingOffCodeForToken = false;
@@ -253,9 +270,12 @@ export const authSlice = createSlice({
                 state.tokensRefreshError = tokensRefreshError;
                 state.resourcePermissions = {};
 
-                Object.keys(nullSession).forEach((key) => {
-                    state[key] = nullSession[key];
-                });
+                // Set null session
+                state.sessionExpiry = null,
+                state.idToken = null,
+                state.idTokenContents = null,
+                state.accessToken = null,
+                state.refreshToken = null,
 
                 state.isRefreshingTokens = false;
                 setLSNotSignedIn();

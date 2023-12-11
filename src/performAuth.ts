@@ -1,12 +1,13 @@
-import {message} from "antd";
+import { message } from "antd";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useLocation } from "react-router-dom";
 
 import { tokenHandoff } from "./redux/authSlice";
+import { RootState, useAppDispatch } from "./redux/store";
+
 import { buildUrlEncodedData, getIsAuthenticated, popLocalStorageItem, nop } from "./utils";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
-import { RootState } from "./redux/store";
 
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";
 export const LS_BENTO_POST_AUTH_REDIRECT = "BENTO_POST_AUTH_REDIRECT";
@@ -41,16 +42,16 @@ export const performAuth = async (authorizationEndpoint: string, clientId: strin
 };
 
 const defaultAuthCodeCallback = async (
-    dispatch,
-    history,
-    code,
-    verifier,
-    onSuccessfulAuthentication,
-    clientId,
-    authCallbackUrl
+    dispatch: ReturnType<typeof useAppDispatch>,
+    history: ReturnType<typeof useHistory>,
+    code: string,
+    verifier: string,
+    onSuccessfulAuthentication: any,
+    clientId: string,
+    authCallbackUrl: string,
 ) => {
     const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
-    await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
+    await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }))
     history.replace(lastPath ?? DEFAULT_REDIRECT);
     await dispatch(onSuccessfulAuthentication(nop));
 };
@@ -60,10 +61,10 @@ export const setLSNotSignedIn = () => {
 };
 
 export const useHandleCallback = (
-    callbackPath,
-    onSuccessfulAuthentication,
-    clientId,
-    authCallbackUrl,
+    callbackPath: string,
+    onSuccessfulAuthentication: any,
+    clientId: string,
+    authCallbackUrl: string,
     authCodeCallback = undefined
 ) => {
     const dispatch = useDispatch();
@@ -117,7 +118,7 @@ export const useHandleCallback = (
             return;
         }
 
-        const verifier = popLocalStorageItem(PKCE_LS_VERIFIER);
+        const verifier = popLocalStorageItem(PKCE_LS_VERIFIER) ?? "";
 
         (authCodeCallback ?? defaultAuthCodeCallback)(
             dispatch,

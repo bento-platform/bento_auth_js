@@ -16,7 +16,7 @@ export const useResourcePermissions = (resource: string, authUrl: string) => {
 
     useEffect(() => {
         if (!haveAuthorizationService) return;
-        dispatch(fetchResourcePermissions({ resource, authUrl }));
+        dispatch(fetchResourcePermissions({ resource, authzUrl: authUrl }));
     }, [haveAuthorizationService, resource, authUrl]);
 
     const key = useMemo(() => makeResourceKey(resource), [resource]);

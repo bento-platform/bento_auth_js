@@ -1,4 +1,4 @@
-import { Dispatch, configureStore, createAsyncThunk } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 import auth from "./authSlice";
 import openIdConfiguration from "./openIdConfigSlice";
 import { useDispatch } from "react-redux";
