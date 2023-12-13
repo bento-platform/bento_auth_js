@@ -63,7 +63,6 @@ export const refreshTokens = createAsyncThunk<any, string, {rejectValue: any}>(
             method: "POST",
             headers: {
                 "Content-Type": "application/x-www-form-urlencoded",
-                Authorization: `Bearer ${state.auth.accessToken}`,
             },
             body: buildUrlEncodedData({
                 grant_type: "refresh_token",
@@ -100,7 +99,7 @@ export const fetchResourcePermissions = createAsyncThunk<any, PermissionParams, 
         const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.accessToken}` },
-            body: JSON.stringify({ resources: resource }),
+            body: JSON.stringify({resources: [resource]}),
         });
         return await response.json();
     },

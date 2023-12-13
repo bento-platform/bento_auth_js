@@ -17,5 +17,3 @@ export {
     default as OIDCReducer,
     fetchOpenIdConfiguration
 } from "./redux/openIdConfigSlice";
-
-export { default as AuthStore } from "./redux/store";

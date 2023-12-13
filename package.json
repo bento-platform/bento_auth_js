@@ -1,5 +1,5 @@
 {
-  "name": "bento_auth_js",
+  "name": "bento-auth-js",
   "version": "1.0.0",
   "description": "Authentication library for web applications of Bento-Platform",
   "main": "dist/index.js",
@@ -7,7 +7,7 @@
   "scripts": {
     "build": "npx tsc",
     "lint": "npx eslint src",
-    "buildpack": "rm ./packs/*.tgz && tsc && npm pack --pack-destination ./packs"
+    "buildpack": "rm -f ./packs/*.tgz && tsc && npm pack --pack-destination ./packs"
   },
   "repository": {
     "type": "git",
