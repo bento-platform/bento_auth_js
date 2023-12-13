@@ -87,14 +87,17 @@ export const refreshTokens = createAsyncThunk<any, string, {rejectValue: any}>(
     }
 );
 
-type PermissionParams = {
+type FetchPermissionPayload = {
+    result: string[][];
+};
+type FetchPermissionParams = {
     resource: string;
     authzUrl: string;
 }
-export const fetchResourcePermissions = createAsyncThunk<any, PermissionParams, { rejectValue: any }>(
+export const fetchResourcePermissions = createAsyncThunk<FetchPermissionPayload, FetchPermissionParams, { rejectValue: any }>(
     "auth/FETCH_RESOURCE_PERMISSIONS",
-    async ({ resource, authzUrl: authUrl }: PermissionParams, { getState }) => {
-        const url = `${authUrl}/policy/permissions`;
+    async ({ resource, authzUrl }: FetchPermissionParams, { getState }) => {
+        const url = `${authzUrl}/policy/permissions`;
         const { auth } = getState() as RootState;
         const response = await fetch(url, {
             method: "POST",
@@ -293,7 +296,7 @@ export const authSlice = createSlice({
                     ...state.resourcePermissions[key],
                     isFetching: false,
                     hasAttempted: true,
-                    permissions: payload?.result ?? [],
+                    permissions: payload?.result?.[0] ?? [],
                 };
             })
             .addCase(fetchResourcePermissions.rejected, (state, { meta, payload, error }) => {

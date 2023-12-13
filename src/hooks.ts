@@ -9,15 +9,15 @@ export const useAuthorizationHeader = () => {
     return useMemo(() => (accessToken ? { Authorization: `Bearer ${accessToken}` } : {}), [accessToken]);
 };
 
-export const useResourcePermissions = (resource: string, authUrl: string) => {
+export const useResourcePermissions = (resource: string, authzUrl: string) => {
     const dispatch = useDispatch();
 
-    const haveAuthorizationService = !!authUrl;
+    const haveAuthorizationService = !!authzUrl;
 
     useEffect(() => {
         if (!haveAuthorizationService) return;
-        dispatch(fetchResourcePermissions({ resource, authzUrl: authUrl }));
-    }, [haveAuthorizationService, resource, authUrl]);
+        dispatch(fetchResourcePermissions({ resource, authzUrl }));
+    }, [haveAuthorizationService, resource, authzUrl]);
 
     const key = useMemo(() => makeResourceKey(resource), [resource]);
 
@@ -32,7 +32,7 @@ export const useResourcePermissions = (resource: string, authUrl: string) => {
     };
 };
 
-export const useHasResourcePermission = (resource: string, authUrl: string, permission: string) => {
-    const { permissions, isFetching } = useResourcePermissions(resource, authUrl) ?? {};
+export const useHasResourcePermission = (resource: string, authzUrl: string, permission: string) => {
+    const { permissions, isFetching } = useResourcePermissions(resource, authzUrl) ?? {};
     return { isFetching, hasPermission: permissions.includes(permission) };
 };
