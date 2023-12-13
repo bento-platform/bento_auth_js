@@ -46,7 +46,7 @@ const defaultAuthCodeCallback = async (
     history: ReturnType<typeof useHistory>,
     code: string,
     verifier: string,
-    onSuccessfulAuthentication: any,
+    onSuccessfulAuthentication: CallableFunction,
     clientId: string,
     authCallbackUrl: string,
 ) => {
@@ -62,7 +62,7 @@ export const setLSNotSignedIn = () => {
 
 export const useHandleCallback = (
     callbackPath: string,
-    onSuccessfulAuthentication: any,
+    onSuccessfulAuthentication: CallableFunction,
     clientId: string,
     authCallbackUrl: string,
     authCodeCallback = undefined

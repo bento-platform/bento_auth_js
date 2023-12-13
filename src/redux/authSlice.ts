@@ -6,6 +6,11 @@ import { LS_BENTO_WAS_SIGNED_IN, setLSNotSignedIn } from "../performAuth";
 import { makeResourceKey } from "../resources";
 import { RootState } from "./store";
 
+type BaseError = {
+    error: string;
+    error_description: string;
+};
+
 type TokenHandoffParams = {
     code: string;
     clientId: string;
@@ -18,7 +23,7 @@ type TokenHandoffPayload = {
     id_token: string,
     refresh_token: string,
     error?: {
-        error?: any;
+        error?: string;
         error_description?: string;
     };
 };
@@ -53,9 +58,16 @@ export const tokenHandoff = createAsyncThunk<
     }
 );
 
-export const refreshTokens = createAsyncThunk<any, string, {rejectValue: any}>(
+type RefreshTokenPayload = {
+    access_token: string,
+    expires_in: number,
+    id_token: string,
+    refresh_token: string,
+};
+type RefreshTokenError = BaseError;
+export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string, {rejectValue: RefreshTokenError}>(
     "auth/REFRESH_TOKENS",
-    async (clientId: string , { getState }) => {
+    async (clientId: string , { getState, rejectWithValue }) => {
         const state = getState() as RootState;
         const url = state.openIdConfiguration.data["token_endpoint"];
 
@@ -70,6 +82,10 @@ export const refreshTokens = createAsyncThunk<any, string, {rejectValue: any}>(
                 refresh_token: state.auth.refreshToken,
             }),
         });
+
+        if (!response.ok) {
+            return rejectWithValue((await response.json()) as RefreshTokenError)
+        }
 
         // Assuming the server responds with JSON
         return await response.json();
@@ -94,7 +110,8 @@ type FetchPermissionParams = {
     resource: string;
     authzUrl: string;
 }
-export const fetchResourcePermissions = createAsyncThunk<FetchPermissionPayload, FetchPermissionParams, { rejectValue: any }>(
+type FetchPermissionError = BaseError;
+export const fetchResourcePermissions = createAsyncThunk<FetchPermissionPayload, FetchPermissionParams, { rejectValue: FetchPermissionError }>(
     "auth/FETCH_RESOURCE_PERMISSIONS",
     async ({ resource, authzUrl }: FetchPermissionParams, { getState }) => {
         const url = `${authzUrl}/policy/permissions`;
@@ -181,7 +198,8 @@ export const authSlice = createSlice({
     reducers: {
         signOut: (state) => {
             setLSNotSignedIn();
-            state = {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            state = { 
                 ...state,
                 ...nullSession,
                 tokensRefreshError: "",
@@ -262,7 +280,7 @@ export const authSlice = createSlice({
             })
             .addCase(refreshTokens.rejected, (state, { payload, error: errorProp }) => {
                 if (errorProp) console.error(errorProp);
-                const { error, error_description: errorDesc } = payload.data ?? {};
+                const { error, error_description: errorDesc } = payload ?? {};
                 const tokensRefreshError = error
                     ? `${error}: ${errorDesc}`
                     : errorProp.message ?? "Error refreshing tokens";
