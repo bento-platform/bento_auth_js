@@ -3,12 +3,12 @@ import { JWTPayload, decodeJwt } from "jose";
 
 import { buildUrlEncodedData } from "../utils";
 import { LS_BENTO_WAS_SIGNED_IN, setLSNotSignedIn } from "../performAuth";
-import { makeResourceKey } from "../resources";
+import { Resource, makeResourceKey } from "../resources";
 import { RootState } from "./store";
 
 type BaseError = {
     error: string;
-    error_description: string;
+    error_description?: string;
 };
 
 type TokenHandoffParams = {
@@ -17,6 +17,7 @@ type TokenHandoffParams = {
     authCallbackUrl: string;
     verifier: string;
 };
+
 type TokenHandoffPayload = {
     access_token: string,
     expires_in: number,
@@ -27,7 +28,14 @@ type TokenHandoffPayload = {
         error_description?: string;
     };
 };
-type TokenHandoffError = TokenHandoffPayload;
+
+type TokenHandoffError = BaseError;
+
+const missingOpenIdConfig: TokenHandoffError = {
+    error: "Error while attempting to perform the token handoff",
+    error_description: "No token endpoint available/No openIdConfiguration data",
+};
+
 export const tokenHandoff = createAsyncThunk<
     TokenHandoffPayload, 
     TokenHandoffParams,
@@ -36,7 +44,9 @@ export const tokenHandoff = createAsyncThunk<
     }>("auth/TOKEN_HANDOFF",
     async (handoffParams, { getState, rejectWithValue }) => {
         const state = getState() as RootState;
-        const url = state.openIdConfiguration.data?.["token_endpoint"];
+        const url = state.openIdConfiguration.data?.token_endpoint;
+
+        if (!url) return rejectWithValue(missingOpenIdConfig);
 
         const response = await fetch(url, {
             method: "POST",
@@ -69,7 +79,9 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string, {reje
     "auth/REFRESH_TOKENS",
     async (clientId: string , { getState, rejectWithValue }) => {
         const state = getState() as RootState;
-        const url = state.openIdConfiguration.data["token_endpoint"];
+        const url = state.openIdConfiguration.data?.token_endpoint;
+
+        if (!url) return rejectWithValue(missingOpenIdConfig);
 
         const response = await fetch(url, {
             method: "POST",
@@ -107,7 +119,7 @@ type FetchPermissionPayload = {
     result: string[][];
 };
 type FetchPermissionParams = {
-    resource: string;
+    resource: Resource;
     authzUrl: string;
 }
 type FetchPermissionError = BaseError;
@@ -234,7 +246,7 @@ export const authSlice = createSlice({
             .addCase(tokenHandoff.rejected, (state, action) => {
                 let handoffError = "";
                 if (action.payload) {
-                    const { error, error_description: errorDesc } = action.payload.error ?? {};
+                    const { error, error_description: errorDesc } = action.payload ?? {};
                     if (error) {
                         handoffError = `${error}: ${errorDesc}`
                     }

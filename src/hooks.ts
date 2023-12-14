@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { makeResourceKey } from "./resources";
+import { Resource, makeResourceKey } from "./resources";
 import { fetchResourcePermissions } from "./redux/authSlice";
 import { RootState } from "./redux/store";
 
@@ -9,7 +9,7 @@ export const useAuthorizationHeader = () => {
     return useMemo(() => (accessToken ? { Authorization: `Bearer ${accessToken}` } : {}), [accessToken]);
 };
 
-export const useResourcePermissions = (resource: string, authzUrl: string) => {
+export const useResourcePermissions = (resource: Resource, authzUrl: string) => {
     const dispatch = useDispatch();
 
     const haveAuthorizationService = !!authzUrl;
@@ -32,7 +32,7 @@ export const useResourcePermissions = (resource: string, authzUrl: string) => {
     };
 };
 
-export const useHasResourcePermission = (resource: string, authzUrl: string, permission: string) => {
+export const useHasResourcePermission = (resource: Resource, authzUrl: string, permission: string) => {
     const { permissions, isFetching } = useResourcePermissions(resource, authzUrl) ?? {};
     return { isFetching, hasPermission: permissions.includes(permission) };
 };

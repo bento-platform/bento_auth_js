@@ -1,6 +1,7 @@
 import { JWTPayload } from "jose";
+import { Resource } from "./resources";
 
-export const buildUrlEncodedData = (obj: any) =>
+export const buildUrlEncodedData = (obj: object) =>
     Object.entries(obj).reduce((params, [k, v]) => {
         if (v === null || v === undefined) return params;
         params.set(k, v.toString());
@@ -13,14 +14,14 @@ export const getIsAuthenticated = (idTokenContents: JWTPayload | null | undefine
 
 export const makeAuthorizationHeader = (token: string) => (token ? { Authorization: `Bearer ${token}` } : {});
 
-export const recursiveOrderedObject = (x: any): any => {
+export const recursiveOrderedObject = (x: Resource): unknown => {
     if (Array.isArray(x)) {
         // Don't sort array, but DO make sure each nested object has sorted keys
         return x.map((y) => recursiveOrderedObject(y));
     } else if (typeof x === "object" && x !== null) {
         return Object.keys(x)
             .sort()
-            .reduce((acc: any, y: string) => {
+            .reduce<Resource>((acc, y: string) => {
                 acc[y] = x[y];
                 return acc;
             }, {});

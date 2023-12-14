@@ -1,8 +1,15 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { RootState } from "./store";
 
+type OpenIdConfigPayload = {
+    issuer: string;
+    authorization_endpoint: string;
+    token_endpoint: string;
+    grant_types_supported: string[];
+}
+
 // Async actions using createAsyncThunk
-export const fetchOpenIdConfiguration = createAsyncThunk(
+export const fetchOpenIdConfiguration = createAsyncThunk<OpenIdConfigPayload, string>(
     "openIdConfig/fetchOpenIdConfiguration",
     async (openIdConfigUrl: string, { rejectWithValue }) => {
         const response = await fetch(openIdConfigUrl);
@@ -22,13 +29,12 @@ export const fetchOpenIdConfiguration = createAsyncThunk(
 );
 
 type OIDCSliceState = {
+    data?: OpenIdConfigPayload;
     isFetching: boolean;
-    data: any;
     expiry: number | null;
 };
 const initialState: OIDCSliceState = {
     isFetching: false,
-    data: null,
     expiry: null,
 };
 
@@ -48,11 +54,10 @@ export const openIdConfigSlice = createSlice({
         builder.addCase(fetchOpenIdConfiguration.rejected, (state, { error }) => {
             console.error(error);
             state.isFetching = false;
-            state.data = null;
+            state.data = undefined;
             state.expiry = null;
         });
     },
 });
 
-export const {} = openIdConfigSlice.actions;
 export default openIdConfigSlice.reducer;
