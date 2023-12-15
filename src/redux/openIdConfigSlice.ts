@@ -29,13 +29,12 @@ export const fetchOpenIdConfiguration = createAsyncThunk<OpenIdConfigPayload, st
 );
 
 type OIDCSliceState = {
-    data?: OpenIdConfigPayload;
     isFetching: boolean;
-    expiry: number | null;
+    data?: OpenIdConfigPayload;
+    expiry?: number;
 };
 const initialState: OIDCSliceState = {
     isFetching: false,
-    expiry: null,
 };
 
 export const openIdConfigSlice = createSlice({
@@ -55,7 +54,7 @@ export const openIdConfigSlice = createSlice({
             console.error(error);
             state.isFetching = false;
             state.data = undefined;
-            state.expiry = null;
+            state.expiry = undefined;
         });
     },
 });

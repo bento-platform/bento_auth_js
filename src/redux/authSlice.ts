@@ -36,12 +36,7 @@ const missingOpenIdConfig: TokenHandoffError = {
     error_description: "No token endpoint available/No openIdConfiguration data",
 };
 
-export const tokenHandoff = createAsyncThunk<
-    TokenHandoffPayload, 
-    TokenHandoffParams,
-    {
-        rejectValue: TokenHandoffError,
-    }>("auth/TOKEN_HANDOFF",
+export const tokenHandoff = createAsyncThunk< TokenHandoffPayload, TokenHandoffParams >("auth/TOKEN_HANDOFF",
     async (handoffParams, { getState, rejectWithValue }) => {
         const state = getState() as RootState;
         const url = state.openIdConfiguration.data?.token_endpoint;
@@ -60,11 +55,7 @@ export const tokenHandoff = createAsyncThunk<
             }),
         });
 
-        const body = await response.json();
-        if (!response.ok) {
-            return rejectWithValue(body as TokenHandoffError);
-        }
-        return body as TokenHandoffPayload;
+        return (await response.json()) as TokenHandoffPayload;
     }
 );
 
@@ -74,14 +65,13 @@ type RefreshTokenPayload = {
     id_token: string,
     refresh_token: string,
 };
-type RefreshTokenError = BaseError;
-export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string, {rejectValue: RefreshTokenError}>(
+export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
     "auth/REFRESH_TOKENS",
-    async (clientId: string , { getState, rejectWithValue }) => {
+    async (clientId: string , { getState }) => {
         const state = getState() as RootState;
         const url = state.openIdConfiguration.data?.token_endpoint;
-
-        if (!url) return rejectWithValue(missingOpenIdConfig);
+        
+        if (!url) return;
 
         const response = await fetch(url, {
             method: "POST",
@@ -95,12 +85,9 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string, {reje
             }),
         });
 
-        if (!response.ok) {
-            return rejectWithValue((await response.json()) as RefreshTokenError)
-        }
+        const body = await response.json();
 
-        // Assuming the server responds with JSON
-        return await response.json();
+        return await body;
     },
     {
         condition: (_: string, { getState }): boolean => {
@@ -122,8 +109,7 @@ type FetchPermissionParams = {
     resource: Resource;
     authzUrl: string;
 }
-type FetchPermissionError = BaseError;
-export const fetchResourcePermissions = createAsyncThunk<FetchPermissionPayload, FetchPermissionParams, { rejectValue: FetchPermissionError }>(
+export const fetchResourcePermissions = createAsyncThunk<FetchPermissionPayload, FetchPermissionParams>(
     "auth/FETCH_RESOURCE_PERMISSIONS",
     async ({ resource, authzUrl }: FetchPermissionParams, { getState }) => {
         const url = `${authzUrl}/policy/permissions`;
@@ -146,11 +132,11 @@ export const fetchResourcePermissions = createAsyncThunk<FetchPermissionPayload,
 );
 
 const nullSession = {
-    sessionExpiry: null,
-    idToken: null,
-    idTokenContents: null,
-    accessToken: null,
-    refreshToken: null,
+    sessionExpiry: undefined,
+    idToken: undefined,
+    idTokenContents: undefined,
+    accessToken: undefined,
+    refreshToken: undefined,
 };
 
 type AuthSliceState = {
@@ -172,12 +158,12 @@ type AuthSliceState = {
         };
     };
 
-    sessionExpiry?: number | null;
-    idToken?: string | null;
-    idTokenContents?: JWTPayload | null;
+    sessionExpiry?: number;
+    idToken?: string;
+    idTokenContents?: JWTPayload;
 
-    accessToken?: string | null;
-    refreshToken?: string | null;
+    accessToken?: string;
+    refreshToken?: string;
 };
 const initialState: AuthSliceState = {
     loading: false,
@@ -189,18 +175,6 @@ const initialState: AuthSliceState = {
     isRefreshingTokens: false,
     tokensRefreshError: "",
 
-    // Below is token/token-derived data
-
-    // sessionExpiry: null,
-    // idToken: null,
-    // idTokenContents: null,
-
-    //  - NEVER dehydrate the below items to localStorage; it is a security risk!
-    // accessToken: null,
-    // refreshToken: null,
-
-    // Below is permissions caching for controlling how the UI appears for different resources
-    //  - It's in this reducer since signing out / losing a token will clear permissions caches.
     resourcePermissions: {},
 };
 
@@ -243,30 +217,17 @@ export const authSlice = createSlice({
                 state.isHandingOffCodeForToken = false;
                 localStorage.setItem(LS_BENTO_WAS_SIGNED_IN, "true");
             })
-            .addCase(tokenHandoff.rejected, (state, action) => {
-                let handoffError = "";
-                if (action.payload) {
-                    const { error, error_description: errorDesc } = action.payload ?? {};
-                    if (error) {
-                        handoffError = `${error}: ${errorDesc}`
-                    }
-                } else {
-                    handoffError = action.error.message ?? "Error handing off authorization code for token";
-                }
-
+            .addCase(tokenHandoff.rejected, (state, { error }) => {
+                const handoffError = error.message ?? "Error handing off authorization code for token";
                 console.error(handoffError);
-                state.handoffError = handoffError;
-                state.resourcePermissions = {};
-
-                // Set null session
-                state.sessionExpiry = null,
-                state.idToken = null,
-                state.idTokenContents = null,
-                state.accessToken = null,
-                state.refreshToken = null,
-
-                state.loading = false;
-                state.isHandingOffCodeForToken = false;
+                state = {
+                    ...state,
+                    ...nullSession,
+                    loading: false,
+                    isHandingOffCodeForToken: false,
+                    handoffError: handoffError,
+                    resourcePermissions: {},
+                }
                 setLSNotSignedIn();
             })
             .addCase(refreshTokens.pending, (state) => {
@@ -290,24 +251,18 @@ export const authSlice = createSlice({
                     localStorage.setItem(LS_BENTO_WAS_SIGNED_IN, "true");
                 }
             })
-            .addCase(refreshTokens.rejected, (state, { payload, error: errorProp }) => {
-                if (errorProp) console.error(errorProp);
-                const { error, error_description: errorDesc } = payload ?? {};
-                const tokensRefreshError = error
-                    ? `${error}: ${errorDesc}`
-                    : errorProp.message ?? "Error refreshing tokens";
-                console.error(tokensRefreshError);
-                state.tokensRefreshError = tokensRefreshError;
-                state.resourcePermissions = {};
+            .addCase(refreshTokens.rejected, (state, { error }) => {
+                console.error(error);
+                const refreshError = error.message ?? "Error refreshing tokens";
 
-                // Set null session
-                state.sessionExpiry = null,
-                state.idToken = null,
-                state.idTokenContents = null,
-                state.accessToken = null,
-                state.refreshToken = null,
+                state = {
+                    ...state,
+                    ...nullSession,
+                    tokensRefreshError: refreshError,
+                    resourcePermissions: {},
+                    isRefreshingTokens: false
+                }
 
-                state.isRefreshingTokens = false;
                 setLSNotSignedIn();
             })
             .addCase(fetchResourcePermissions.pending, (state, { meta }) => {
@@ -329,17 +284,17 @@ export const authSlice = createSlice({
                     permissions: payload?.result?.[0] ?? [],
                 };
             })
-            .addCase(fetchResourcePermissions.rejected, (state, { meta, payload, error }) => {
+            .addCase(fetchResourcePermissions.rejected, (state, { meta, error }) => {
                 const key = makeResourceKey(meta.arg.resource);
                 if (error) console.error(error);
+
+                const permissionsError = error.message ?? 
+                    "An error occurred while fetching permissions for a resource";
                 state.resourcePermissions[key] = {
                     ...state.resourcePermissions[key],
                     isFetching: false,
                     hasAttempted: true,
-                    error:
-                        payload?.error ??
-                        error.message ??
-                        "An error occurred while fetching permissions for a resource",
+                    error: permissionsError,
                 };
             });
     },
