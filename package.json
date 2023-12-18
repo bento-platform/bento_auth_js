@@ -36,8 +36,8 @@
   },
   "homepage": "https://github.com/bento-platform/bento_auth_js#readme",
   "peerDependencies": {
-    "antd": "^3.26.20",
     "@reduxjs/toolkit": "^1.9.7",
+    "antd": "^3.26.20",
     "react": ">=16.0.0",
     "react-redux": "^7.2.9",
     "react-router-dom": "^5.3.4",
@@ -48,6 +48,7 @@
   },
   "devDependencies": {
     "@reduxjs/toolkit": "^1.9.7",
+    "@semantic-release/git": "^10.0.1",
     "@types/react": "18.2.42",
     "@types/react-router-dom": "^5.3.3",
     "@typescript-eslint/eslint-plugin": "^6.13.2",
