@@ -3,8 +3,6 @@ import auth from "./authSlice";
 import openIdConfiguration from "./openIdConfigSlice";
 import { useDispatch } from "react-redux";
 
-export const LS_OPENID_CONFIG_KEY = "BENTO_OPENID_CONFIG";
-
 // This store is only created as a way to export its state and dispatch types
 const authStore = configureStore({
     reducer: {

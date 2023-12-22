@@ -1,6 +1,8 @@
 import { JWTPayload } from "jose";
 import { Resource } from "./resources";
 
+export const LS_OPENID_CONFIG_KEY = "BENTO_OPENID_CONFIG";
+
 export const buildUrlEncodedData = (obj: object) =>
     Object.entries(obj).reduce((params, [k, v]) => {
         if (v === null || v === undefined) return params;
