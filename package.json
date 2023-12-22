@@ -1,6 +1,6 @@
 {
   "name": "bento-auth-js",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Authentication library for web applications of Bento-Platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
