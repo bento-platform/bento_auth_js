@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Resource, makeResourceKey } from "./resources";
 import { fetchResourcePermissions } from "./redux/authSlice";
-import { RootState } from "./redux/store";
+import {AppDispatch, RootState} from "./redux/store";
 
 export const useAuthorizationHeader = () => {
     const { accessToken } = useSelector((state: RootState) => state.auth);
@@ -10,7 +10,7 @@ export const useAuthorizationHeader = () => {
 };
 
 export const useResourcePermissions = (resource: Resource, authzUrl: string) => {
-    const dispatch = useDispatch();
+    const dispatch:AppDispatch = useDispatch();
 
     const haveAuthorizationService = !!authzUrl;
 

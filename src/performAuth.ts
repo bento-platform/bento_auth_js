@@ -1,10 +1,9 @@
-import { message } from "antd";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useHistory, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 import { tokenHandoff } from "./redux/authSlice";
-import { RootState, useAppDispatch } from "./redux/store";
+import { RootState, useAppDispatch} from "./redux/store";
 
 import { buildUrlEncodedData, getIsAuthenticated, popLocalStorageItem, nop } from "./utils";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
@@ -44,7 +43,7 @@ export const performAuth = async (authorizationEndpoint: string, clientId: strin
 
 const defaultAuthCodeCallback = async (
     dispatch: ReturnType<typeof useAppDispatch>,
-    history: ReturnType<typeof useHistory>,
+    navigate: ReturnType<typeof useNavigate>,
     code: string,
     verifier: string,
     onSuccessfulAuthentication: CallableFunction,
@@ -53,7 +52,7 @@ const defaultAuthCodeCallback = async (
 ) => {
     const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
     await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }))
-    history.replace(lastPath ?? DEFAULT_REDIRECT);
+    navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
     await dispatch(onSuccessfulAuthentication(nop));
 };
 
@@ -66,10 +65,10 @@ export const useHandleCallback = (
     onSuccessfulAuthentication: CallableFunction,
     clientId: string,
     authCallbackUrl: string,
-    authCodeCallback = undefined
+    authCodeCallback: typeof defaultAuthCodeCallback | undefined = undefined
 ) => {
     const dispatch = useDispatch();
-    const history = useHistory();
+    const navigate = useNavigate();
     const location = useLocation();
     const oidcConfig = useSelector((state: RootState) => state.openIdConfiguration.data);
     const idTokenContents = useSelector((state: RootState) => state.auth.idTokenContents);
@@ -84,7 +83,7 @@ export const useHandleCallback = (
 
         // If we're already authenticated, don't try to reauthenticate
         if (isAuthenticated) {
-            history.replace(DEFAULT_REDIRECT);
+            navigate(DEFAULT_REDIRECT, { replace: true });
             return;
         }
 
@@ -92,7 +91,6 @@ export const useHandleCallback = (
 
         const error = params.get("error");
         if (error) {
-            message.error(`Error encountered during sign-in: ${error}`);
             console.error(error);
             setLSNotSignedIn();
             return;
@@ -123,7 +121,7 @@ export const useHandleCallback = (
 
         (authCodeCallback ?? defaultAuthCodeCallback)(
             dispatch,
-            history,
+            navigate,
             code,
             verifier,
             onSuccessfulAuthentication,
@@ -133,5 +131,5 @@ export const useHandleCallback = (
             console.error(err);
             setLSNotSignedIn();
         });
-    }, [location, history, oidcConfig]);
+    }, [location, navigate, oidcConfig]);
 };
