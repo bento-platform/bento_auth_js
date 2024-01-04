@@ -74,50 +74,63 @@ export const useHandleCallback = (
     const idTokenContents = useSelector((state: RootState) => state.auth.idTokenContents);
     const isAuthenticated = getIsAuthenticated(idTokenContents);
 
-    useEffect(() => {
+    console.log("useHandleCallback - Entry", { callbackPath, oidcConfig, isAuthenticated, idTokenContents });
+
+
+        console.log("useHandleCallback - useEffect triggered", { pathname: location.pathname, oidcConfig });
+
         // Ignore non-callback URLs
-        if (!location.pathname.startsWith(callbackPath)) return;
+        if (!location.pathname.startsWith(callbackPath)) {
+            console.log("useHandleCallback - Ignoring non-callback URL");
+            return;
+        }
 
         // End early if we don't have OpenID config (yet)
-        if (!oidcConfig) return;
+        if (!oidcConfig) {
+            console.log("useHandleCallback - No OpenID config available");
+            return;
+        }
 
         // If we're already authenticated, don't try to reauthenticate
         if (isAuthenticated) {
+            console.log("useHandleCallback - Already authenticated, navigating to default redirect");
             navigate(DEFAULT_REDIRECT, { replace: true });
             return;
         }
 
         const params = new URLSearchParams(window.location.search);
+        console.log("useHandleCallback - URLSearchParams", params.toString());
 
         const error = params.get("error");
         if (error) {
-            console.error(error);
+            console.error("useHandleCallback - Error in URL params", error);
             setLSNotSignedIn();
             return;
         }
 
         const code = params.get("code");
         if (!code) {
-            // No code, don't do anything
+            console.log("useHandleCallback - No code in URL params");
             setLSNotSignedIn();
             return;
         }
 
         const localState = popLocalStorageItem(PKCE_LS_STATE);
         if (!localState) {
-            console.error("no local state");
+            console.error("useHandleCallback - No local state");
             setLSNotSignedIn();
             return;
         }
 
         const paramState = params.get("state");
         if (localState !== paramState) {
-            console.error("state mismatch");
+            console.error("useHandleCallback - State mismatch");
             setLSNotSignedIn();
             return;
         }
 
         const verifier = popLocalStorageItem(PKCE_LS_VERIFIER) ?? "";
+        console.log("useHandleCallback - Proceeding with auth code callback", { code, verifier });
 
         (authCodeCallback ?? defaultAuthCodeCallback)(
             dispatch,
@@ -128,8 +141,10 @@ export const useHandleCallback = (
             clientId,
             authCallbackUrl
         ).catch((err) => {
-            console.error(err);
+            console.error("useHandleCallback - Error during auth code callback", err);
             setLSNotSignedIn();
         });
-    }, [location, navigate, oidcConfig]);
+
+    console.log("useHandleCallback - Effect set");
 };
+
