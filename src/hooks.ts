@@ -79,7 +79,7 @@ export const useSignInPopupTokenHandoff = (
 
         // Listener cleanup
         return removeListenerIfNeeded;
-    }, [dispatch, applicationUrl, authCallbackUrl, clientId]);
+    }, [dispatch, removeListenerIfNeeded, applicationUrl, authCallbackUrl, clientId]);
 };
 
 export const useSessionWorkerTokenRefresh = (
