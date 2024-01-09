@@ -55,25 +55,31 @@ export const useOpenIdConfig = (openIdConfigUrl: string) => {
 
 export const useSignInPopupTokenHandoff = (
     applicationUrl: string,
-    authCallBackUrl: string,
+    authCallbackUrl: string,
     clientId: string,
     windowMessageHandler: MutableRefObject<null | MessageHandlerFunc>
 ) => {
     const dispatch = useDispatch();
-    useEffect(() => {
+    const removeListenerIfNeeded = () => {
         if (windowMessageHandler.current) {
             window.removeEventListener("message", windowMessageHandler.current);
         }
+    }
+    useEffect(() => {
+        removeListenerIfNeeded();
         windowMessageHandler.current = (e: MessageEvent) => {
             if (e.origin !== applicationUrl) return;
             if (e.data?.type !== AUTH_RESULT_TYPE) return;
             const { code, verifier } = e.data ?? {};
             if (!code || !verifier) return;
             localStorage.removeItem(LS_SIGN_IN_POPUP);
-            dispatch(tokenHandoff({ code, verifier, clientId: clientId, authCallbackUrl: authCallBackUrl }));
+            dispatch(tokenHandoff({ code, verifier, clientId: clientId, authCallbackUrl: authCallbackUrl }));
         };
         window.addEventListener("message", windowMessageHandler.current);
-    }, [dispatch]);
+
+        // Listener cleanup
+        return removeListenerIfNeeded;
+    }, [dispatch, applicationUrl, authCallbackUrl, clientId]);
 };
 
 export const useSessionWorkerTokenRefresh = (
@@ -98,7 +104,7 @@ export const useSessionWorkerTokenRefresh = (
                 sessionWorkerRef.current.terminate();
             }
         }
-    }, [dispatch, createWorker, fetchUserDependentData]);
+    }, [dispatch, createWorker, fetchUserDependentData, clientId]);
 };
 
 interface OpenIdConfig {
@@ -108,11 +114,12 @@ interface OpenIdConfig {
 
 export const useOpenSignInWindowCallback = (
     signInWindow: MutableRefObject<null | Window>,
-    openIdConfig: OpenIdConfig,
     clientId: string,
+    openIdConfigUrl: string,
     authCallbackUrl: string,
     windowFeatures = "scrollbars=no, toolbar=no, menubar=no, width=800, height=600"
 ) => {
+    const openIdConfig = useOpenIdConfig(openIdConfigUrl);
     return useCallback(() => {
         if (signInWindow.current && !signInWindow.current.closed) {
             signInWindow.current.focus();
