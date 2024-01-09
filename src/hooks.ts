@@ -1,11 +1,13 @@
 import { MutableRefObject, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { AnyAction } from "redux";
+import { ThunkAction } from 'redux-thunk';
+
 import { Resource, makeResourceKey } from "./resources";
 import { fetchResourcePermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
 import { RootState } from "./redux/store";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
-import { fetchOpenIdConfiguration } from "./redux/openIdConfigSlice";
-import { AsyncThunkAction } from "@reduxjs/toolkit";
+import { fetchOpenIdConfigurationIfNecessary } from "./redux/openIdConfigSlice";
 
 const AUTH_RESULT_TYPE = "authResult";
 
@@ -47,9 +49,7 @@ export const useHasResourcePermission = (resource: Resource, authzUrl: string, p
 export const useOpenIdConfig = (openIdConfigUrl: string) => {
     const dispatch = useDispatch();
 
-    useEffect(() => {
-        dispatch(fetchOpenIdConfiguration(openIdConfigUrl));
-    }, [dispatch, openIdConfigUrl]);
+    dispatch(fetchOpenIdConfigurationIfNecessary(openIdConfigUrl));
 
     return useSelector((state: RootState) => state.openIdConfiguration.data);
 };
@@ -85,7 +85,7 @@ export const useSessionWorkerTokenRefresh = (
     clientId: string,
     sessionWorkerRef: MutableRefObject<null | Worker>,
     createWorker: () => Worker,
-    fetchUserDependentData: AsyncThunkAction<unknown, unknown, object>,
+    fetchUserDependentData: ThunkAction<void, RootState, unknown, AnyAction>,
 ) => {
     const dispatch = useDispatch();
     useEffect(() => {

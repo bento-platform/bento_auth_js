@@ -2,13 +2,14 @@ import { message } from "antd";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useLocation } from "react-router-dom";
+import { AnyAction } from "redux";
+import { ThunkAction } from 'redux-thunk';
 
 import { tokenHandoff } from "./redux/authSlice";
 import { RootState, useAppDispatch } from "./redux/store";
 
 import { buildUrlEncodedData, getIsAuthenticated, popLocalStorageItem } from "./utils";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
-import { AsyncThunkAction } from "@reduxjs/toolkit";
 
 export const LS_SIGN_IN_POPUP = "BENTO_DID_CREATE_SIGN_IN_POPUP";
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";
@@ -48,7 +49,7 @@ const defaultAuthCodeCallback = async (
     history: ReturnType<typeof useHistory>,
     code: string,
     verifier: string,
-    onSuccessfulAuthentication: AsyncThunkAction<unknown, unknown, object>,
+    onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
     clientId: string,
     authCallbackUrl: string,
 ) => {
@@ -62,9 +63,10 @@ export const setLSNotSignedIn = () => {
     localStorage.removeItem(LS_BENTO_WAS_SIGNED_IN);
 };
 
+
 export const useHandleCallback = (
     callbackPath: string,
-    onSuccessfulAuthentication: AsyncThunkAction<unknown, unknown, object>,
+    onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
     clientId: string,
     authCallbackUrl: string,
     authCodeCallback = undefined

@@ -73,10 +73,15 @@ const App = () => {
     
     const isInAuthPopup = checkIsInAuthPopup(BENTO_URL_NO_TRAILING_SLASH);
 
+    // Assuming fetchUserDependentData is a thunk creator:
+    // Using a thunk creator as a hook argument may lead to unwanted triggers on re-renders.
+    // So we store the thunk inner function of the fetchUserDependentData thunk creator in a const.
+    const onAuthSuccess = fetchUserDependentData(nop);
+
     // Auth code callback handling 
     useHandleCallback(
         CALLBACK_PATH,
-        fetchUserDependentData,
+        onAuthSuccess,
         CLIENT_ID,
         AUTH_CALLBACK_URL,
         isInAuthPopup ? popupOpenerAuthCallback : undefined,
@@ -90,7 +95,7 @@ const App = () => {
         CLIENT_ID,
         sessionWorker,
         createSessionWorker, 
-        fetchUserDependentData(nop),
+        onAuthSuccess, 
     );
 
     // Get user auth status
