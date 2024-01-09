@@ -107,11 +107,6 @@ export const useSessionWorkerTokenRefresh = (
     }, [dispatch, createWorker, fetchUserDependentData, clientId]);
 };
 
-interface OpenIdConfig {
-    authorization_endpoint: string;
-    [x: string | number | symbol]: unknown;
-}
-
 export const useOpenSignInWindowCallback = (
     signInWindow: MutableRefObject<null | Window>,
     clientId: string,
