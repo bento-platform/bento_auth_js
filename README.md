@@ -51,6 +51,8 @@ import {
 import YourSessionWorker as SessionWorker from "../session.worker"
 import { AUTH_CALLBACK_URL, BENTO_URL_NO_TRAILING_SLASH, CLIENT_ID, OPENID_CONFIG_URL } from "../config";
 
+// Session worker creator function must be in a constant for useSessionWorkerTokenRefresh
+const createSessionWorker = () => new SessionWorker();
 
 const App = () => {
     const dispatch = useDispatch();
@@ -87,7 +89,7 @@ const App = () => {
     useSessionWorkerTokenRefresh(
         CLIENT_ID,
         sessionWorker,
-        () => new SessionWorker(),
+        createSessionWorker, 
         fetchUserDependentData(nop),
     );
 

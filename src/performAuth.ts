@@ -146,5 +146,3 @@ export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
         return false;
     }
 }
-
-

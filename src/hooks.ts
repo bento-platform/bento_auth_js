@@ -48,7 +48,7 @@ export const useOpenIdConfig = (openIdConfigUrl: string) => {
 
     useEffect(() => {
         dispatch(fetchOpenIdConfiguration(openIdConfigUrl));
-    }, [dispatch]);
+    }, [dispatch, openIdConfigUrl]);
 
     return useSelector((state: RootState) => state.openIdConfiguration.data);
 }
@@ -92,7 +92,13 @@ export const useSessionWorkerTokenRefresh = (
             });
             sessionWorkerRef.current = sw;
         }
-    }, [dispatch]);
+
+        return () => {
+            if (sessionWorkerRef.current) {
+                sessionWorkerRef.current.terminate();
+            }
+        }
+    }, [dispatch, createWorker, fetchUserDependentData]);
 };
 
 interface OpenIdConfig {
@@ -126,7 +132,7 @@ export const useOpenSignInWindowCallback = (
                 `${windowFeatures}, top=${popupTop}, left=${popupLeft}`,
             );
         })();
-    }, [openIdConfig]);
+    }, [openIdConfig, clientId, authCallbackUrl, windowFeatures]);
 };
 
 export const usePopupOpenerAuthCallback = (applicationUrl: string) => {
