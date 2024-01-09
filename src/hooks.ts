@@ -5,6 +5,7 @@ import { fetchResourcePermissions, refreshTokens, tokenHandoff } from "./redux/a
 import { RootState } from "./redux/store";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
 import { fetchOpenIdConfiguration } from "./redux/openIdConfigSlice";
+import { AsyncThunkAction } from "@reduxjs/toolkit";
 
 const AUTH_RESULT_TYPE = "authResult";
 
@@ -67,7 +68,7 @@ export const useSignInPopupTokenHandoff = (
             const { code, verifier } = e.data ?? {};
             if (!code || !verifier) return;
             localStorage.removeItem(LS_SIGN_IN_POPUP);
-            dispatch(tokenHandoff({ code, verifier, clientId: clientId, authCallbackUrl: authCallbackUrl }));
+            dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
         };
         window.addEventListener("message", windowMessageHandler.current);
 
@@ -84,7 +85,7 @@ export const useSessionWorkerTokenRefresh = (
     clientId: string,
     sessionWorkerRef: MutableRefObject<null | Worker>,
     createWorker: () => Worker,
-    fetchUserDependentData: (servicesCb: () => void) => void,
+    fetchUserDependentData: AsyncThunkAction<unknown, unknown, object>,
 ) => {
     const dispatch = useDispatch();
     useEffect(() => {
