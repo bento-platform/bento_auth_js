@@ -51,7 +51,7 @@ export const useOpenIdConfig = (openIdConfigUrl: string) => {
     }, [dispatch, openIdConfigUrl]);
 
     return useSelector((state: RootState) => state.openIdConfiguration.data);
-}
+};
 
 export const useSignInPopupTokenHandoff = (
     applicationUrl: string,
@@ -60,13 +60,7 @@ export const useSignInPopupTokenHandoff = (
     windowMessageHandler: MutableRefObject<null | MessageHandlerFunc>
 ) => {
     const dispatch = useDispatch();
-    const removeListenerIfNeeded = () => {
-        if (windowMessageHandler.current) {
-            window.removeEventListener("message", windowMessageHandler.current);
-        }
-    }
     useEffect(() => {
-        removeListenerIfNeeded();
         windowMessageHandler.current = (e: MessageEvent) => {
             if (e.origin !== applicationUrl) return;
             if (e.data?.type !== AUTH_RESULT_TYPE) return;
@@ -78,8 +72,12 @@ export const useSignInPopupTokenHandoff = (
         window.addEventListener("message", windowMessageHandler.current);
 
         // Listener cleanup
-        return removeListenerIfNeeded;
-    }, [dispatch, removeListenerIfNeeded, applicationUrl, authCallbackUrl, clientId]);
+        return () => {
+            if (windowMessageHandler.current) {
+                window.removeEventListener("message", windowMessageHandler.current);
+            }   
+        };
+    }, [dispatch, applicationUrl, authCallbackUrl, clientId]);
 };
 
 export const useSessionWorkerTokenRefresh = (
@@ -102,8 +100,9 @@ export const useSessionWorkerTokenRefresh = (
         return () => {
             if (sessionWorkerRef.current) {
                 sessionWorkerRef.current.terminate();
+                sessionWorkerRef.current = null;
             }
-        }
+        };
     }, [dispatch, createWorker, fetchUserDependentData, clientId]);
 };
 
@@ -151,4 +150,4 @@ export const usePopupOpenerAuthCallback = (applicationUrl: string) => {
         // close ourselves to return focus to the original window.
         window.close();
     }, [applicationUrl]);
-}
+};

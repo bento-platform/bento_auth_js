@@ -52,7 +52,7 @@ const defaultAuthCodeCallback = async (
     authCallbackUrl: string,
 ) => {
     const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
-    await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }))
+    await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
     history.replace(lastPath ?? DEFAULT_REDIRECT);
     await dispatch(onSuccessfulAuthentication(nop));
 };
@@ -145,4 +145,4 @@ export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
     } catch {
         return false;
     }
-}
+};
