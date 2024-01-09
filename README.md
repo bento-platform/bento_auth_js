@@ -37,17 +37,20 @@ If you do need authorization, both reducers must be used by the store.
 Usually this is done in the top `App` component. The following example uses a pop-up window with PKCE flow.
 
 ```tsx
-import { 
-    fetchOpenIdConfiguration,
-    createAuthUrl,
+import {
     useHandleCallback,
     getIsAuthenticated,
-    refreshTokens,
-    tokenHandoff,
-    LS_SIGN_IN_POPUP,
+    checkIsInAuthPopup,
+    useOpenSignInWindowCallback,
+    usePopupOpenerAuthCallback,
+    useSignInPopupTokenHandoff,
+    useSessionWorkerTokenRefresh,
+    useOpenIdConfig,
 } from "bento-auth-js";
 
+import YourSessionWorker as SessionWorker from "../session.worker"
 import { AUTH_CALLBACK_URL, BENTO_URL_NO_TRAILING_SLASH, CLIENT_ID, OPENID_CONFIG_URL } from "../config";
+
 
 const App = () => {
     const dispatch = useDispatch();
@@ -57,42 +60,17 @@ const App = () => {
     const windowMessageHandler = useRef(null);
 
     // Get the OIDC config
-    useEffect(() => {
-        dispatch(fetchOpenIdConfiguration(OPENID_CONFIG_URL));
-    }, [dispatch]);
-
-    const openIdConfig = useSelector((state) => state.openIdConfiguration.data);
+    const openIdConfig = useOpenIdConfig(OPENID_CONFIG_URL);
     
     // Opens sign-in window
-    const userSignIn = useCallback(() => {
-        // If we already have a sign-in window open, focus on it instead.
-        if (signInWindow.current && !signInWindow.current.closed) {
-            signInWindow.current.focus();
-            return;
-        }
-        if (!openIdConfig) return;
+    const userSignIn = useOpenSignInWindowCallback(
+        signInWindow, openIdConfig, CLIENT_ID, AUTH_CALLBACK_URL, SIGN_IN_WINDOW_FEATURES);
 
-        (async () => {
-            // open a window with this url to sign in
-            const authUrl = await createAuthUrl(openIdConfig["authorization_endpoint"], CLIENT_ID, AUTH_CALLBACK_URL);
-            signInWindow.current = window.open(authUrl, "Bento Sign In");
-        })();
-    }, [signInWindow, openIdConfig]);
-
-    const popupOpenerAuthCallback = async (dispatch, _history, code, verifier) => {
-        if (!window.opener) return;
-
-        // We're inside a popup window for authentication
-
-        // Send the code and verifier to the main thread/page for authentication
-        // IMPORTANT SECURITY: provide BENTO_URL as the target origin:
-        window.opener.postMessage({ type: "authResult", code, verifier }, BENTO_URL_NO_TRAILING_SLASH);
-
-        // We're inside a popup window which has successfully re-authenticated the user, meaning we need to
-        // close ourselves to return focus to the original window.
-        window.close();
-    };
+    // Create the auth callback for the application's URL
+    const popupOpenerAuthCallback = usePopupOpenerAuthCallback(BENTO_URL_NO_TRAILING_SLASH);
     
+    const isInAuthPopup = checkIsInAuthPopup(BENTO_URL_NO_TRAILING_SLASH);
+
     // Auth code callback handling 
     useHandleCallback(
         CALLBACK_PATH,
@@ -101,28 +79,17 @@ const App = () => {
         AUTH_CALLBACK_URL,
         isInAuthPopup ? popupOpenerAuthCallback : undefined,
     );
+    
+    // Token handoff with Proof Key for Code Exchange (PKCE) from the sing-in popup
+    useSignInPopupTokenHandoff(BENTO_URL_NO_TRAILING_SLASH, AUTH_CALLBACK_URL, CLIENT_ID, windowMessageHandler);
 
-    // Session tokens refresh
-    useEffect(() => {
-        if (shouldRefresh) {
-            dispatch(refreshTokens(CLIENT_ID));
-        }
-    }, [dispatch, shouldRefresh]);
-
-    // Token handoff with Proof Key for Code Exchange (PKCE) from the sing-in window
-    useEffect(() => {
-        if (windowMessageHandler.current) {
-            window.removeEventListener("message", windowMessageHandler.current);
-        }
-        windowMessageHandler.current = (e) => {
-            if (e.data?.type !== "authResult") return;
-            const { code, verifier } = e.data ?? {};
-            if (!code || !verifier) return;
-            localStorage.removeItem(LS_SIGN_IN_POPUP);
-            dispatch(tokenHandoff({ code, verifier, clientId: CLIENT_ID, authCallbackUrl: AUTH_CALLBACK_URL }));
-        };
-        window.addEventListener("message", windowMessageHandler.current);
-    }, [dispatch, windowMessageHandler]);
+    // Session worker tokens refresh
+    useSessionWorkerTokenRefresh(
+        CLIENT_ID,
+        sessionWorker,
+        () => new SessionWorker(),
+        fetchUserDependentData(nop),
+    );
 
     // Get user auth status
     const { accessToken, idTokenContents } = useSelector((state) => state.auth);

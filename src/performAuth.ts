@@ -1,5 +1,5 @@
 import { message } from "antd";
-import { MutableRefObject, useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useLocation } from "react-router-dom";
 
@@ -12,6 +12,8 @@ import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRando
 export const LS_SIGN_IN_POPUP = "BENTO_DID_CREATE_SIGN_IN_POPUP";
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";
 export const LS_BENTO_POST_AUTH_REDIRECT = "BENTO_POST_AUTH_REDIRECT";
+
+const DEFAULT_REDIRECT = "/overview";
 
 export const createAuthURL = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
     const state = secureRandomString();
@@ -35,8 +37,6 @@ export const createAuthURL = async (authorizationEndpoint: string, clientId: str
         }).toString()
     );
 };
-
-const DEFAULT_REDIRECT = "/overview";
 
 export const performAuth = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
     window.location.href = await createAuthURL(authorizationEndpoint, clientId, authCallbackUrl, scope);
@@ -147,49 +147,4 @@ export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
     }
 }
 
-interface OpenIdConfig {
-    authorization_endpoint: string;
-}
 
-export const openSignInWindowCallback = (
-    signInWindow: MutableRefObject<null | Window>,
-    openIdConfig: OpenIdConfig,
-    clientId: string,
-    authCallbackUrl: string,
-    windowFeatures = "scrollbars=no, toolbar=no, menubar=no, width=800, height=600"
-) => {
-    if (signInWindow.current && !signInWindow.current.closed) {
-        signInWindow.current.focus();
-        return;
-    }
-
-    if (!openIdConfig || !window.top) return;
-
-    const popupTop = window.top.outerHeight / 2 + window.top.screenY - 350;
-    const popupLeft = window.top.outerWidth / 2 + window.top.screenX - 400;
-
-    (async () => {
-        localStorage.setItem(LS_SIGN_IN_POPUP, "true");
-        signInWindow.current = window.open(
-            await createAuthURL(openIdConfig["authorization_endpoint"], clientId, authCallbackUrl),
-            "Bento Sign In",
-            `${windowFeatures}, top=${popupTop}, left=${popupLeft}`,
-        );
-    })();
-};
-
-export const popupOpenerAuthCallbackCreator = (applicationUrl: string) => {
-    return async (code: string, verifier: string) => {
-        if (!window.opener) return;
-
-        // We're inside a popup window for authentication
-    
-        // Send the code and verifier to the main thread/page for authentication
-        // IMPORTANT SECURITY: provide BENTO_URL as the target origin:
-        window.opener.postMessage({ type: "authResult", code, verifier }, applicationUrl);
-    
-        // We're inside a popup window which has successfully re-authenticated the user, meaning we need to
-        // close ourselves to return focus to the original window.
-        window.close();
-    }
-}
