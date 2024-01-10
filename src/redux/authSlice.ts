@@ -227,7 +227,7 @@ export const authSlice = createSlice({
                     isHandingOffCodeForToken: false,
                     handoffError: handoffError,
                     resourcePermissions: {},
-                }
+                };
                 setLSNotSignedIn();
             })
             .addCase(refreshTokens.pending, (state) => {
@@ -261,7 +261,7 @@ export const authSlice = createSlice({
                     tokensRefreshError: refreshError,
                     resourcePermissions: {},
                     isRefreshingTokens: false
-                }
+                };
 
                 setLSNotSignedIn();
             })

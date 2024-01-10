@@ -2,16 +2,20 @@ import { message } from "antd";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useLocation } from "react-router-dom";
+import { AnyAction } from "redux";
+import { ThunkAction } from 'redux-thunk';
 
 import { tokenHandoff } from "./redux/authSlice";
 import { RootState, useAppDispatch } from "./redux/store";
 
-import { buildUrlEncodedData, getIsAuthenticated, popLocalStorageItem, nop } from "./utils";
+import { buildUrlEncodedData, getIsAuthenticated, popLocalStorageItem } from "./utils";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
 
 export const LS_SIGN_IN_POPUP = "BENTO_DID_CREATE_SIGN_IN_POPUP";
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";
 export const LS_BENTO_POST_AUTH_REDIRECT = "BENTO_POST_AUTH_REDIRECT";
+
+const DEFAULT_REDIRECT = "/overview";
 
 export const createAuthURL = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
     const state = secureRandomString();
@@ -36,8 +40,6 @@ export const createAuthURL = async (authorizationEndpoint: string, clientId: str
     );
 };
 
-const DEFAULT_REDIRECT = "/overview";
-
 export const performAuth = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
     window.location.href = await createAuthURL(authorizationEndpoint, clientId, authCallbackUrl, scope);
 };
@@ -47,23 +49,24 @@ const defaultAuthCodeCallback = async (
     history: ReturnType<typeof useHistory>,
     code: string,
     verifier: string,
-    onSuccessfulAuthentication: CallableFunction,
+    onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
     clientId: string,
     authCallbackUrl: string,
 ) => {
     const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
-    await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }))
+    await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
     history.replace(lastPath ?? DEFAULT_REDIRECT);
-    await dispatch(onSuccessfulAuthentication(nop));
+    await dispatch(onSuccessfulAuthentication);
 };
 
 export const setLSNotSignedIn = () => {
     localStorage.removeItem(LS_BENTO_WAS_SIGNED_IN);
 };
 
+
 export const useHandleCallback = (
     callbackPath: string,
-    onSuccessfulAuthentication: CallableFunction,
+    onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
     clientId: string,
     authCallbackUrl: string,
     authCodeCallback = undefined
@@ -134,4 +137,15 @@ export const useHandleCallback = (
             setLSNotSignedIn();
         });
     }, [location, history, oidcConfig]);
+};
+
+export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
+    try {
+        const didCreateSignInPopup = localStorage.getItem(LS_SIGN_IN_POPUP);
+        return (
+            window.opener && window.opener.origin === applicationUrl && didCreateSignInPopup === "true"
+        );
+    } catch {
+        return false;
+    }
 };
