@@ -49,7 +49,9 @@ export const useHasResourcePermission = (resource: Resource, authzUrl: string, p
 export const useOpenIdConfig = (openIdConfigUrl: string) => {
     const dispatch = useDispatch();
 
-    dispatch(fetchOpenIdConfigurationIfNecessary(openIdConfigUrl));
+    useEffect(() => {
+        dispatch(fetchOpenIdConfigurationIfNecessary(openIdConfigUrl));
+    }, [dispatch, openIdConfigUrl]);
 
     return useSelector((state: RootState) => state.openIdConfiguration.data);
 };

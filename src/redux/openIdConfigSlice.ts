@@ -34,8 +34,8 @@ export const fetchOpenIdConfiguration = createAsyncThunk<OpenIdConfigPayload, st
 export const fetchOpenIdConfigurationIfNecessary = (openIdConfigUrl: string):
     ThunkAction<void, RootState, unknown, AnyAction> =>
     async (dispatch, getState) => {
-        const { isFetching, data, expiry } = getState().openIdConfiguration;
-        if (isFetching || data || (expiry && Date.now() < expiry * 1000)) return;
+        const { isFetching, expiry } = getState().openIdConfiguration;
+        if (isFetching || (expiry && Date.now() < expiry * 1000)) return;
         return dispatch(fetchOpenIdConfiguration(openIdConfigUrl));
     };
 
