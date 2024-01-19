@@ -29,7 +29,7 @@ export const useResourcePermissions = (resource: Resource, authzUrl: string) => 
         useSelector((state: RootState) => state.auth.resourcePermissions?.[key]) ?? {};
 
     useEffect(() => {
-        if (!haveAuthorizationService || isFetching || (permissions && hasAttempted)) return;
+        if (!haveAuthorizationService || isFetching || permissions || hasAttempted) return;
         dispatch(fetchResourcePermissions({ resource, authzUrl }));
     }, [
         dispatch,
