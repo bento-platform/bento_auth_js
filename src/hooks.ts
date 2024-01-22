@@ -23,15 +23,23 @@ export const useResourcePermissions = (resource: Resource, authzUrl: string) => 
 
     const haveAuthorizationService = !!authzUrl;
 
-    useEffect(() => {
-        if (!haveAuthorizationService) return;
-        dispatch(fetchResourcePermissions({ resource, authzUrl }));
-    }, [haveAuthorizationService, resource, authzUrl]);
-
     const key = useMemo(() => makeResourceKey(resource), [resource]);
 
     const { permissions, isFetching, hasAttempted, error } =
         useSelector((state: RootState) => state.auth.resourcePermissions?.[key]) ?? {};
+
+    useEffect(() => {
+        if (!haveAuthorizationService || isFetching || permissions || hasAttempted) return;
+        dispatch(fetchResourcePermissions({ resource, authzUrl }));
+    }, [
+        dispatch,
+        haveAuthorizationService,
+        isFetching,
+        permissions,
+        hasAttempted,
+        resource,
+        authzUrl,
+    ]);
 
     return {
         permissions: permissions ?? [],
