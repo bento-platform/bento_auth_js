@@ -8,10 +8,16 @@ import { fetchResourcePermissions, refreshTokens, tokenHandoff } from "./redux/a
 import { RootState } from "./redux/store";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
 import { fetchOpenIdConfigurationIfNecessary } from "./redux/openIdConfigSlice";
+import { getIsAuthenticated } from "./utils";
 
 const AUTH_RESULT_TYPE = "authResult";
 
 type MessageHandlerFunc = (e: MessageEvent) => void;
+
+export const useIsAuthenticated = () => {
+    const { idTokenContents } = useSelector((state: RootState) => state.auth);
+    return getIsAuthenticated(idTokenContents);
+};
 
 export const useAuthorizationHeader = () => {
     const { accessToken } = useSelector((state: RootState) => state.auth);
