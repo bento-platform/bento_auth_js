@@ -178,6 +178,21 @@ const initialState: AuthSliceState = {
     resourcePermissions: {},
 };
 
+const setTokenStateFromPayload = (state: AuthSliceState, payload: TokenHandoffPayload | RefreshTokenPayload) => {
+    const {
+        access_token: accessToken,
+        expires_in: exp,
+        id_token: idToken,
+        refresh_token: refreshToken,
+    } = payload;
+
+    state.sessionExpiry = new Date().getTime() / 1000 + exp;
+    state.idToken = idToken;
+    state.idTokenContents = decodeJwt(idToken);
+    state.accessToken = accessToken;
+    state.refreshToken = refreshToken ?? state.refreshToken;
+};
+
 export const authSlice = createSlice({
     name: "auth",
     initialState,
@@ -185,12 +200,12 @@ export const authSlice = createSlice({
         signOut: (state) => {
             setLSNotSignedIn();
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            state = { 
+            Object.assign(state, {
                 ...state,
                 ...nullSession,
                 tokensRefreshError: "",
                 resourcePermissions: {},
-            };
+            });
         },
     },
     extraReducers: (builder) => {
@@ -200,34 +215,23 @@ export const authSlice = createSlice({
             })
             .addCase(tokenHandoff.fulfilled, (state, { payload }) => {
                 state.loading = false;
-                const {
-                    access_token: accessToken,
-                    expires_in: exp,
-                    id_token: idToken,
-                    refresh_token: refreshToken,
-                } = payload;
-
                 // Reset hasAttempted for user-dependent data if we just signed in
-                state.hasAttempted = !state.idTokenContents && idToken ? false : state.hasAttempted;
-                state.sessionExpiry = new Date().getTime() / 1000 + exp;
-                state.idToken = idToken;
-                state.idTokenContents = decodeJwt(idToken);
-                state.accessToken = accessToken;
-                state.refreshToken = refreshToken ?? state.refreshToken;
+                state.hasAttempted = (!state.idTokenContents && payload.id_token) ? false : state.hasAttempted;
+                setTokenStateFromPayload(state, payload);
                 state.isHandingOffCodeForToken = false;
                 localStorage.setItem(LS_BENTO_WAS_SIGNED_IN, "true");
             })
             .addCase(tokenHandoff.rejected, (state, { error }) => {
                 const handoffError = error.message ?? "Error handing off authorization code for token";
                 console.error(handoffError);
-                state = {
+                Object.assign(state, {
                     ...state,
                     ...nullSession,
                     loading: false,
                     isHandingOffCodeForToken: false,
                     handoffError: handoffError,
                     resourcePermissions: {},
-                };
+                });
                 setLSNotSignedIn();
             })
             .addCase(refreshTokens.pending, (state) => {
@@ -235,18 +239,7 @@ export const authSlice = createSlice({
             })
             .addCase(refreshTokens.fulfilled, (state, { payload }) => {
                 if (payload) {
-                    const {
-                        access_token: accessToken,
-                        expires_in: exp,
-                        id_token: idToken,
-                        refresh_token: refreshToken,
-                    } = payload;
-
-                    state.sessionExpiry = new Date().getTime() / 1000 + exp;
-                    state.idToken = idToken;
-                    state.idTokenContents = decodeJwt(idToken);
-                    state.accessToken = accessToken;
-                    state.refreshToken = refreshToken ?? state.refreshToken;
+                    setTokenStateFromPayload(state, payload);
                     state.isRefreshingTokens = false;
                     localStorage.setItem(LS_BENTO_WAS_SIGNED_IN, "true");
                 }
@@ -255,13 +248,13 @@ export const authSlice = createSlice({
                 console.error(error);
                 const refreshError = error.message ?? "Error refreshing tokens";
 
-                state = {
+                Object.assign(state, {
                     ...state,
                     ...nullSession,
                     tokensRefreshError: refreshError,
                     resourcePermissions: {},
                     isRefreshingTokens: false
-                };
+                });
 
                 setLSNotSignedIn();
             })
