@@ -1,14 +1,14 @@
 import { MutableRefObject, useCallback, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AnyAction } from "redux";
-import { ThunkAction } from 'redux-thunk';
+import { ThunkAction } from "redux-thunk";
 
 import { Resource, makeResourceKey } from "./resources";
 import { fetchResourcePermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
 import { RootState } from "./redux/store";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
 import { fetchOpenIdConfigurationIfNecessary } from "./redux/openIdConfigSlice";
-import { getIsAuthenticated } from "./utils";
+import { getIsAuthenticated, makeAuthorizationHeader } from "./utils";
 
 const AUTH_RESULT_TYPE = "authResult";
 
@@ -21,7 +21,7 @@ export const useIsAuthenticated = () => {
 
 export const useAuthorizationHeader = () => {
     const { accessToken } = useSelector((state: RootState) => state.auth);
-    return useMemo(() => (accessToken ? { Authorization: `Bearer ${accessToken}` } : {}), [accessToken]);
+    return useMemo(() => makeAuthorizationHeader(accessToken), [accessToken]);
 };
 
 export const useResourcePermissions = (resource: Resource, authzUrl: string) => {
