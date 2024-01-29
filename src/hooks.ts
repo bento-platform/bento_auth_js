@@ -19,8 +19,10 @@ export const useIsAuthenticated = () => {
     return getIsAuthenticated(idTokenContents);
 };
 
+export const useAccessToken = () => useSelector((state: RootState) => state.auth.accessToken);
+
 export const useAuthorizationHeader = () => {
-    const { accessToken } = useSelector((state: RootState) => state.auth);
+    const accessToken = useAccessToken();
     return useMemo(() => makeAuthorizationHeader(accessToken), [accessToken]);
 };
 
