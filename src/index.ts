@@ -1,5 +1,6 @@
 export * from "./hooks";
 export * from "./performAuth";
+export * from "./performSignOut";
 export * from "./permissions";
 export * from "./pkce";
 export * from "./resources";
