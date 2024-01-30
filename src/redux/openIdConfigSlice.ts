@@ -7,6 +7,7 @@ import { RootState } from "./store";
 type OpenIdConfigPayload = {
     issuer: string;
     authorization_endpoint: string;
+    end_session_endpoint?: string;
     token_endpoint: string;
     grant_types_supported: string[];
 }
