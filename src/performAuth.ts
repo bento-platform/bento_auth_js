@@ -1,15 +1,16 @@
 import { message } from "antd";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useLocation } from "react-router-dom";
 import { AnyAction } from "redux";
-import { ThunkAction } from 'redux-thunk';
+import { ThunkAction } from "redux-thunk";
 
+import { DEFAULT_AUTH_SCOPE, useBentoAuthContext } from "./contexts";
+import { useOpenIdConfig } from "./hooks";
+import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
 import { tokenHandoff } from "./redux/authSlice";
 import { RootState, useAppDispatch } from "./redux/store";
-
-import { buildUrlEncodedData, getIsAuthenticated, popLocalStorageItem } from "./utils";
-import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
+import { buildUrlEncodedData, getIsAuthenticated, logMissingAuthContext, popLocalStorageItem } from "./utils";
 
 export const LS_SIGN_IN_POPUP = "BENTO_DID_CREATE_SIGN_IN_POPUP";
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";
@@ -42,6 +43,21 @@ export const createAuthURL = async (authorizationEndpoint: string, clientId: str
 
 export const performAuth = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
     window.location.href = await createAuthURL(authorizationEndpoint, clientId, authCallbackUrl, scope);
+};
+
+export const usePerformAuth = () => {
+    const { authCallbackUrl, clientId, scope } = useBentoAuthContext();
+    const openIdConfig = useOpenIdConfig();
+    const authorizationEndpoint = openIdConfig?.["authorization_endpoint"];
+    return useCallback(async () => {
+        if (!authCallbackUrl || !clientId) {
+            logMissingAuthContext("authCallbackUrl", "clientId");
+            return;
+        }
+        if (!authorizationEndpoint) return;
+        window.location.href = await createAuthURL(
+            authorizationEndpoint, clientId, authCallbackUrl, scope ?? DEFAULT_AUTH_SCOPE);
+    }, [authCallbackUrl, clientId, authorizationEndpoint]);
 };
 
 const defaultAuthCodeCallback = async (

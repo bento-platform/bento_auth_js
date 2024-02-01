@@ -3,12 +3,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
 
+import { useBentoAuthContext } from "./contexts";
 import { Resource, makeResourceKey } from "./resources";
 import { fetchResourcePermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
 import { RootState } from "./redux/store";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
 import { fetchOpenIdConfigurationIfNecessary } from "./redux/openIdConfigSlice";
-import { getIsAuthenticated, makeAuthorizationHeader } from "./utils";
+import { getIsAuthenticated, logMissingAuthContext, makeAuthorizationHeader } from "./utils";
 
 const AUTH_RESULT_TYPE = "authResult";
 
@@ -62,10 +63,15 @@ export const useHasResourcePermission = (resource: Resource, authzUrl: string, p
     return { isFetching, hasPermission: permissions.includes(permission) };
 };
 
-export const useOpenIdConfig = (openIdConfigUrl: string) => {
+export const useOpenIdConfig = () => {
     const dispatch = useDispatch();
+    const { openIdConfigUrl } = useBentoAuthContext();
 
     useEffect(() => {
+        if (!openIdConfigUrl) {
+            logMissingAuthContext("openIdConfigUrl");
+            return;
+        }
         dispatch(fetchOpenIdConfigurationIfNecessary(openIdConfigUrl));
     }, [dispatch, openIdConfigUrl]);
 
@@ -73,22 +79,24 @@ export const useOpenIdConfig = (openIdConfigUrl: string) => {
 };
 
 export const useSignInPopupTokenHandoff = (
-    applicationUrl: string,
-    authCallbackUrl: string,
-    clientId: string,
     windowMessageHandler: MutableRefObject<null | MessageHandlerFunc>
 ) => {
     const dispatch = useDispatch();
+    const { applicationUrl, authCallbackUrl, clientId } = useBentoAuthContext();
     useEffect(() => {
-        windowMessageHandler.current = (e: MessageEvent) => {
-            if (e.origin !== applicationUrl) return;
-            if (e.data?.type !== AUTH_RESULT_TYPE) return;
-            const { code, verifier } = e.data ?? {};
-            if (!code || !verifier) return;
-            localStorage.removeItem(LS_SIGN_IN_POPUP);
-            dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
-        };
-        window.addEventListener("message", windowMessageHandler.current);
+        if (!applicationUrl || !authCallbackUrl || !clientId) {
+            logMissingAuthContext("applicationUrl", "authCallbackUrl", "clientId");
+        } else {
+            windowMessageHandler.current = (e: MessageEvent) => {
+                if (e.origin !== applicationUrl) return;
+                if (e.data?.type !== AUTH_RESULT_TYPE) return;
+                const { code, verifier } = e.data ?? {};
+                if (!code || !verifier) return;
+                localStorage.removeItem(LS_SIGN_IN_POPUP);
+                dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
+            };
+            window.addEventListener("message", windowMessageHandler.current);
+        }
 
         // Listener cleanup
         return () => {
@@ -100,20 +108,25 @@ export const useSignInPopupTokenHandoff = (
 };
 
 export const useSessionWorkerTokenRefresh = (
-    clientId: string,
     sessionWorkerRef: MutableRefObject<null | Worker>,
     createWorker: () => Worker,
     fetchUserDependentData: ThunkAction<void, RootState, unknown, AnyAction>,
 ) => {
     const dispatch = useDispatch();
+    const { clientId } = useBentoAuthContext();
+
     useEffect(() => {
-        if (!sessionWorkerRef.current) {
-            const sw = createWorker();
-            sw.addEventListener("message", () => {
-                dispatch(refreshTokens(clientId));
-                dispatch(fetchUserDependentData);
-            });
-            sessionWorkerRef.current = sw;
+        if (!clientId) {
+            logMissingAuthContext("clientId");
+        } else {
+            if (!sessionWorkerRef.current) {
+                const sw = createWorker();
+                sw.addEventListener("message", () => {
+                    dispatch(refreshTokens(clientId));
+                    dispatch(fetchUserDependentData);
+                });
+                sessionWorkerRef.current = sw;
+            }
         }
 
         return () => {
@@ -127,13 +140,16 @@ export const useSessionWorkerTokenRefresh = (
 
 export const useOpenSignInWindowCallback = (
     signInWindow: MutableRefObject<null | Window>,
-    clientId: string,
-    openIdConfigUrl: string,
-    authCallbackUrl: string,
     windowFeatures = "scrollbars=no, toolbar=no, menubar=no, width=800, height=600"
 ) => {
-    const openIdConfig = useOpenIdConfig(openIdConfigUrl);
+    const { clientId, authCallbackUrl } = useBentoAuthContext();
+    const openIdConfig = useOpenIdConfig();
     return useCallback(() => {
+        if (!clientId || !authCallbackUrl) {
+            logMissingAuthContext("clientId", "authCallbackUrl");
+            return;
+        }
+
         if (signInWindow.current && !signInWindow.current.closed) {
             signInWindow.current.focus();
             return;
@@ -155,8 +171,14 @@ export const useOpenSignInWindowCallback = (
     }, [openIdConfig, clientId, authCallbackUrl, windowFeatures]);
 };
 
-export const usePopupOpenerAuthCallback = (applicationUrl: string) => {
+export const usePopupOpenerAuthCallback = () => {
+    const { applicationUrl } = useBentoAuthContext();
     return useCallback(async (code: string, verifier: string) => {
+        if (!applicationUrl) {
+            logMissingAuthContext("applicationUrl");
+            return;
+        }
+
         if (!window.opener) return;
 
         // We're inside a popup window for authentication
