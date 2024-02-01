@@ -1,4 +1,3 @@
-import { message } from "antd";
 import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useLocation } from "react-router-dom";
@@ -85,7 +84,8 @@ export const useHandleCallback = (
     onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
     clientId: string,
     authCallbackUrl: string,
-    authCodeCallback = undefined
+    authCodeCallback = undefined,
+    uiErrorCallback: (message: string) => void,
 ) => {
     const dispatch = useDispatch();
     const history = useHistory();
@@ -111,7 +111,7 @@ export const useHandleCallback = (
 
         const error = params.get("error");
         if (error) {
-            message.error(`Error encountered during sign-in: ${error}`);
+            uiErrorCallback(`Error encountered during sign-in: ${error}`);
             console.error(error);
             setLSNotSignedIn();
             return;
