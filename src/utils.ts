@@ -40,3 +40,7 @@ export const popLocalStorageItem = (key: string) => {
 };
 
 export const nop = () => {};
+
+export const logMissingAuthContext = (...keys: string[]): void => {
+    console.error(`Missing Bento auth context: ${keys.join(", ")}`);
+};
