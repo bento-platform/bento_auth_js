@@ -7,7 +7,7 @@ The authorization portion of this library works with applications protected by t
 
 ## Installation
 
-Add bento-auth-js as a dependency to another project:
+Add `bento-auth-js` as a dependency to another project:
 
 ```bash
 npm install bento-auth-js
@@ -39,8 +39,8 @@ Usually this is done in the top `App` component. The following example uses a po
 ```tsx
 import {
     useHandleCallback,
-    getIsAuthenticated,
     checkIsInAuthPopup,
+    useIsAuthenticated,
     useOpenSignInWindowCallback,
     usePopupOpenerAuthCallback,
     useSignInPopupTokenHandoff,
@@ -48,8 +48,9 @@ import {
     useOpenIdConfig,
 } from "bento-auth-js";
 
-import YourSessionWorker as SessionWorker from "../session.worker"
+import YourSessionWorker as SessionWorker from "../session.worker";
 import { AUTH_CALLBACK_URL, BENTO_URL_NO_TRAILING_SLASH, CLIENT_ID, OPENID_CONFIG_URL } from "../config";
+import { BentoAuthContext } from "./contexts";
 
 // Session worker creator function must be in a constant for useSessionWorkerTokenRefresh
 const createSessionWorker = () => new SessionWorker();
@@ -65,12 +66,11 @@ const App = () => {
     const openIdConfig = useOpenIdConfig(OPENID_CONFIG_URL);
     
     // Opens sign-in window
-    const userSignIn = useOpenSignInWindowCallback(
-        signInWindow, openIdConfig, CLIENT_ID, AUTH_CALLBACK_URL, SIGN_IN_WINDOW_FEATURES);
+    const userSignIn = useOpenSignInWindowCallback(signInWindow, SIGN_IN_WINDOW_FEATURES);
 
     // Create the auth callback for the application's URL
-    const popupOpenerAuthCallback = usePopupOpenerAuthCallback(BENTO_URL_NO_TRAILING_SLASH);
-    
+    const popupOpenerAuthCallback = usePopupOpenerAuthCallback();
+
     const isInAuthPopup = checkIsInAuthPopup(BENTO_URL_NO_TRAILING_SLASH);
 
     // Assuming fetchUserDependentData is a thunk creator:
@@ -88,19 +88,17 @@ const App = () => {
     );
     
     // Token handoff with Proof Key for Code Exchange (PKCE) from the sing-in popup
-    useSignInPopupTokenHandoff(BENTO_URL_NO_TRAILING_SLASH, AUTH_CALLBACK_URL, CLIENT_ID, windowMessageHandler);
+    useSignInPopupTokenHandoff(windowMessageHandler);
 
     // Session worker tokens refresh
     useSessionWorkerTokenRefresh(
-        CLIENT_ID,
         sessionWorker,
-        createSessionWorker, 
-        onAuthSuccess, 
+        createSessionWorker,
+        onAuthSuccess,
     );
 
     // Get user auth status
-    const { accessToken, idTokenContents } = useSelector((state) => state.auth);
-    const isAuthenticated = getIsAuthenticated(idTokenContents);
+    const isAuthenticated = useIsAuthenticated();
 
     return (
         <>
@@ -112,6 +110,19 @@ const App = () => {
         </>
     );
 }
+
+const AppWithContext = () => (
+    <BentoAuthContext {{
+        applicationUrl: "(...)",
+        openIdConfigUrl: "(...)",
+        clientId: "(...)",
+        scope: "openid email",
+        postSignOutUrl: "/",
+        authCallbackUrl: "(...)/callback",
+    }}>
+        <App />
+    </BentoAuthContext>
+);
 ```
 
 ### Authorization for a signed-in user
