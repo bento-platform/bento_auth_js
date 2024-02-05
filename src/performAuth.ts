@@ -82,19 +82,23 @@ export const setLSNotSignedIn = () => {
 export const useHandleCallback = (
     callbackPath: string,
     onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
-    clientId: string,
-    authCallbackUrl: string,
     authCodeCallback = undefined,
     uiErrorCallback: (message: string) => void,
 ) => {
     const dispatch = useDispatch();
     const history = useHistory();
     const location = useLocation();
-    const oidcConfig = useSelector((state: RootState) => state.openIdConfiguration.data);
+    const { authCallbackUrl, clientId } = useBentoAuthContext();
+    const oidcConfig = useOpenIdConfig();
     const idTokenContents = useSelector((state: RootState) => state.auth.idTokenContents);
     const isAuthenticated = getIsAuthenticated(idTokenContents);
 
     useEffect(() => {
+        if (!authCallbackUrl || !clientId) {
+            logMissingAuthContext("authCallbackUrl", "clientId");
+            return;
+        }
+
         // Ignore non-callback URLs
         if (!location.pathname.startsWith(callbackPath)) return;
 

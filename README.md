@@ -82,8 +82,6 @@ const App = () => {
     useHandleCallback(
         CALLBACK_PATH,
         onAuthSuccess,
-        CLIENT_ID,
-        AUTH_CALLBACK_URL,
         isInAuthPopup ? popupOpenerAuthCallback : undefined,
     );
     
