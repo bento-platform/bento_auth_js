@@ -1,3 +1,4 @@
+export * from "./autoAuthenticate";
 export * from "./contexts";
 export * from "./hooks";
 export * from "./performAuth";
