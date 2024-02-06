@@ -23,13 +23,14 @@ const defaultContextObject: BentoAuthContextObject = {
 
 export const BentoAuthContext = createContext<BentoAuthContextObject>(defaultContextObject);
 
-export interface BentoAuthContextProviderProps extends BentoAuthContextObject {
+export interface BentoAuthContextProviderProps {
     children: React.ReactElement;
+    value: BentoAuthContextObject;
 }
 
-export const BentoAuthContextProvider = ({children, ...props}: BentoAuthContextProviderProps) => {
+export const BentoAuthContextProvider = ({children, value}: BentoAuthContextProviderProps) => {
     return (
-        <BentoAuthContext.Provider value={props}>
+        <BentoAuthContext.Provider value={value}>
             {children}
         </BentoAuthContext.Provider>
     );
