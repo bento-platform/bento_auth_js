@@ -1,4 +1,4 @@
-import { createContext, useContext } from "react";
+import React, {createContext, useContext} from "react";
 
 export interface BentoAuthContextObject {
     applicationUrl: string;
@@ -22,6 +22,19 @@ const defaultContextObject: BentoAuthContextObject = {
 };
 
 export const BentoAuthContext = createContext<BentoAuthContextObject>(defaultContextObject);
+
+export interface BentoAuthContextProviderProps {
+    children: React.ReactElement;
+    value: BentoAuthContextObject;
+}
+
+export const BentoAuthContextProvider = ({children, value}: BentoAuthContextProviderProps) => {
+    return (
+        <BentoAuthContext.Provider value={value}>
+            {children}
+        </BentoAuthContext.Provider>
+    );
+};
 
 export const useBentoAuthContext = () => {
     return useContext(BentoAuthContext);

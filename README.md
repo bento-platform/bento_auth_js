@@ -46,6 +46,7 @@ import {
     useSignInPopupTokenHandoff,
     useSessionWorkerTokenRefresh,
     useOpenIdConfig,
+    BentoAuthContextProvider,
 } from "bento-auth-js";
 
 import YourSessionWorker as SessionWorker from "../session.worker";
@@ -110,7 +111,7 @@ const App = () => {
 }
 
 const AppWithContext = () => (
-    <BentoAuthContext.Provider value={{
+    <BentoAuthContextProvider value={{
         applicationUrl: "(...)",
         openIdConfigUrl: "(...)",
         clientId: "(...)",
