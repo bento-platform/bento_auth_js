@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { useBentoAuthContext } from "./contexts";
@@ -12,14 +13,14 @@ export const usePerformSignOut = () => {
     const { clientId, postSignOutUrl } = useBentoAuthContext();
     const { idToken } = useSelector((state: RootState) => state.auth);
     const openIdConfig = useOpenIdConfig();
+    const endSessionEndpoint = openIdConfig?.end_session_endpoint;
 
-    return () => {
+    return useCallback(() => {
         if (!clientId || !postSignOutUrl) {
             logMissingAuthContext("clientId", "postSignOutUrl");
             return;
         }
 
-        const endSessionEndpoint: string | undefined = openIdConfig?.end_session_endpoint;
         if (!endSessionEndpoint) {
             dispatch(signOut());
             return;
@@ -34,5 +35,5 @@ export const usePerformSignOut = () => {
         endSessionUrl.searchParams.append("post_logout_redirect_uri", postSignOutUrl);
         setLSNotSignedIn(); // Make sure we don't immediately try to sign in again
         window.location.href = endSessionUrl.toString();
-    };
+    }, [dispatch, clientId, postSignOutUrl, idToken, openIdConfig, endSessionEndpoint]);
 };
