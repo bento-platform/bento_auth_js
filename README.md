@@ -110,7 +110,7 @@ const App = () => {
 }
 
 const AppWithContext = () => (
-    <BentoAuthContext {{
+    <BentoAuthContext.Provider value={{
         applicationUrl: "(...)",
         openIdConfigUrl: "(...)",
         clientId: "(...)",
