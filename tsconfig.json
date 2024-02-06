@@ -34,7 +34,10 @@
     "noFallthroughCasesInSwitch": true,         /* Enable error reporting for fallthrough cases in switch statements. */
 
     /* Completeness */
-    "skipLibCheck": true                        /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true,                        /* Skip type checking all .d.ts files. */
+
+    /* JSX */
+    "jsx": "react-jsx"
   },
   "include": [
     "src/**/*"
