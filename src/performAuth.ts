@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { useHistory, useLocation } from "react-router-dom";
 import { AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
@@ -85,7 +85,7 @@ export const useHandleCallback = (
     authCodeCallback = undefined,
     uiErrorCallback: (message: string) => void,
 ) => {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const history = useHistory();
     const location = useLocation();
     const { authCallbackUrl, clientId } = useBentoAuthContext();
