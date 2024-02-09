@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useLocation } from "react-router-dom";
 import { AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
@@ -8,7 +8,7 @@ import { DEFAULT_AUTH_SCOPE, useBentoAuthContext } from "./contexts";
 import { useOpenIdConfig } from "./hooks";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
 import { tokenHandoff } from "./redux/authSlice";
-import { RootState, useAppDispatch } from "./redux/store";
+import { RootState } from "./redux/store";
 import { buildUrlEncodedData, getIsAuthenticated, logMissingAuthContext, popLocalStorageItem } from "./utils";
 
 export const LS_SIGN_IN_POPUP = "BENTO_DID_CREATE_SIGN_IN_POPUP";
@@ -64,7 +64,7 @@ export type AuthCodeCallbackFunction = (code: string, verifier: string) => Promi
 const useDefaultAuthCodeCallback = (
     onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
 ): AuthCodeCallbackFunction => {
-    const dispatch = useAppDispatch();
+    const dispatch = useDispatch();
     const history = useHistory();
     const { authCallbackUrl, clientId } = useBentoAuthContext();
 
