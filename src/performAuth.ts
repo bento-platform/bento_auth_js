@@ -93,6 +93,8 @@ export const useHandleCallback = (
     const idTokenContents = useSelector((state: RootState) => state.auth.idTokenContents);
     const isAuthenticated = getIsAuthenticated(idTokenContents);
 
+    const defaultAuthCodeCallback = useDefaultAuthCodeCallback(onSuccessfulAuthentication);
+
     useEffect(() => {
         if (!authCallbackUrl || !clientId) {
             logMissingAuthContext("authCallbackUrl", "clientId");
@@ -144,13 +146,11 @@ export const useHandleCallback = (
 
         const verifier = popLocalStorageItem(PKCE_LS_VERIFIER) ?? "";
 
-        const defaultAuthCodeCallback = useDefaultAuthCodeCallback(onSuccessfulAuthentication);
-
         (authCodeCallback ?? defaultAuthCodeCallback)(code, verifier).catch((err) => {
             console.error(err);
             setLSNotSignedIn();
         });
-    }, [location, history, oidcConfig]);
+    }, [location, history, oidcConfig, defaultAuthCodeCallback]);
 };
 
 export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
