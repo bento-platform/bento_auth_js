@@ -1,12 +1,12 @@
 import { MutableRefObject, useCallback, useEffect, useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
 
 import { useBentoAuthContext } from "./contexts";
 import { Resource, makeResourceKey } from "./resources";
 import { fetchResourcePermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
-import { RootState, useAppDispatch } from "./redux/store";
+import { RootState } from "./redux/store";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
 import { fetchOpenIdConfigurationIfNecessary } from "./redux/openIdConfigSlice";
 import { getIsAuthenticated, logMissingAuthContext, makeAuthorizationHeader } from "./utils";
@@ -28,7 +28,7 @@ export const useAuthorizationHeader = () => {
 };
 
 export const useResourcePermissions = (resource: Resource, authzUrl: string) => {
-    const dispatch = useAppDispatch();
+    const dispatch = useDispatch();
 
     const haveAuthorizationService = !!authzUrl;
 
@@ -64,7 +64,7 @@ export const useHasResourcePermission = (resource: Resource, authzUrl: string, p
 };
 
 export const useOpenIdConfig = () => {
-    const dispatch = useAppDispatch();
+    const dispatch = useDispatch();
     const { openIdConfigUrl } = useBentoAuthContext();
 
     useEffect(() => {
@@ -81,7 +81,7 @@ export const useOpenIdConfig = () => {
 export const useSignInPopupTokenHandoff = (
     windowMessageHandler: MutableRefObject<null | MessageHandlerFunc>
 ) => {
-    const dispatch = useAppDispatch();
+    const dispatch = useDispatch();
     const { applicationUrl, authCallbackUrl, clientId } = useBentoAuthContext();
     useEffect(() => {
         if (!applicationUrl || !authCallbackUrl || !clientId) {
@@ -112,7 +112,7 @@ export const useSessionWorkerTokenRefresh = (
     createWorker: () => Worker,
     fetchUserDependentData: ThunkAction<void, RootState, unknown, AnyAction>,
 ) => {
-    const dispatch = useAppDispatch();
+    const dispatch = useDispatch();
     const { clientId } = useBentoAuthContext();
 
     useEffect(() => {
