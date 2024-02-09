@@ -59,33 +59,33 @@ export const usePerformAuth = () => {
     }, [authCallbackUrl, clientId, authorizationEndpoint]);
 };
 
-const defaultAuthCodeCallback = async (
-    dispatch: ReturnType<typeof useAppDispatch>,
-    history: ReturnType<typeof useHistory>,
-    code: string,
-    verifier: string,
+export type AuthCodeCallbackFunction = (code: string, verifier: string) => Promise<void>;
+
+const useDefaultAuthCodeCallback = (
     onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
-    clientId: string,
-    authCallbackUrl: string,
-) => {
-    const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
-    await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
-    history.replace(lastPath ?? DEFAULT_REDIRECT);
-    await dispatch(onSuccessfulAuthentication);
+): AuthCodeCallbackFunction => {
+    const dispatch = useAppDispatch();
+    const history = useHistory();
+    const { authCallbackUrl, clientId } = useBentoAuthContext();
+
+    return useCallback(async (code: string, verifier: string) => {
+        const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
+        await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
+        history.replace(lastPath ?? DEFAULT_REDIRECT);
+        await dispatch(onSuccessfulAuthentication);
+    }, [dispatch]);
 };
 
 export const setLSNotSignedIn = () => {
     localStorage.removeItem(LS_BENTO_WAS_SIGNED_IN);
 };
 
-
 export const useHandleCallback = (
     callbackPath: string,
     onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
-    authCodeCallback = undefined,
+    authCodeCallback: AuthCodeCallbackFunction | undefined = undefined,
     uiErrorCallback: (message: string) => void,
 ) => {
-    const dispatch = useAppDispatch();
     const history = useHistory();
     const location = useLocation();
     const { authCallbackUrl, clientId } = useBentoAuthContext();
@@ -144,15 +144,9 @@ export const useHandleCallback = (
 
         const verifier = popLocalStorageItem(PKCE_LS_VERIFIER) ?? "";
 
-        (authCodeCallback ?? defaultAuthCodeCallback)(
-            dispatch,
-            history,
-            code,
-            verifier,
-            onSuccessfulAuthentication,
-            clientId,
-            authCallbackUrl
-        ).catch((err) => {
+        const defaultAuthCodeCallback = useDefaultAuthCodeCallback(onSuccessfulAuthentication);
+
+        (authCodeCallback ?? defaultAuthCodeCallback)(code, verifier).catch((err) => {
             console.error(err);
             setLSNotSignedIn();
         });
