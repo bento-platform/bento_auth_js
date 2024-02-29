@@ -14,7 +14,8 @@ export const buildUrlEncodedData = (obj: object) =>
 export const getIsAuthenticated = (idTokenContents: JWTPayload | null | undefined) =>
     !!idTokenContents && idTokenContents.exp && Math.round(new Date().getTime() / 1000) < idTokenContents.exp;
 
-export const makeAuthorizationHeader = (token: string) => (token ? { Authorization: `Bearer ${token}` } : {});
+export const makeAuthorizationHeader = (token: string | null | undefined) =>
+    (token ? { Authorization: `Bearer ${token}` } : {});
 
 export const recursiveOrderedObject = (x: Resource): unknown => {
     if (Array.isArray(x)) {
@@ -39,3 +40,7 @@ export const popLocalStorageItem = (key: string) => {
 };
 
 export const nop = () => {};
+
+export const logMissingAuthContext = (...keys: string[]): void => {
+    console.error(`Missing Bento auth context: ${keys.join(" or ")}`);
+};

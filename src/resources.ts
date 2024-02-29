@@ -17,21 +17,21 @@ export const makeProjectResource = (projectId: string): Resource => {
     return {
         project: projectId
     };
-}
+};
 
 export const makeProjectDataTypeResource = (projectId: string, dataType: string): Resource => {
     return {
         ...makeProjectResource(projectId),
         data_type: dataType,
     };
-}
+};
 
 export const makeProjectDatasetResource = (projectId: string, datasetId: string): Resource => {
     return {
         ...makeProjectResource(projectId),
         dataset: datasetId,
     };
-}
+};
 
 export const makeProjectDatasetDataTypeResource = (
         projectId: string,
@@ -41,7 +41,7 @@ export const makeProjectDatasetDataTypeResource = (
         ...makeProjectDatasetResource(projectId, datasetId),
         data_type: dataType,
     };
-}
+};
 
 // TODO: use records instead of JSON string (when formalized):
 export const makeResourceKey = (x: Resource) => JSON.stringify(recursiveOrderedObject(x));

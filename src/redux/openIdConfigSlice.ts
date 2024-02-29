@@ -1,9 +1,13 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { AnyAction } from "redux";
+import { ThunkAction } from 'redux-thunk';
+
 import { RootState } from "./store";
 
 type OpenIdConfigPayload = {
     issuer: string;
     authorization_endpoint: string;
+    end_session_endpoint?: string;
     token_endpoint: string;
     grant_types_supported: string[];
 }
@@ -27,6 +31,14 @@ export const fetchOpenIdConfiguration = createAsyncThunk<OpenIdConfigPayload, st
         },
     }
 );
+
+export const fetchOpenIdConfigurationIfNecessary = (openIdConfigUrl: string):
+    ThunkAction<void, RootState, unknown, AnyAction> =>
+    async (dispatch, getState) => {
+        const { isFetching, expiry } = getState().openIdConfiguration;
+        if (isFetching || (expiry && Date.now() < expiry * 1000)) return;
+        return dispatch(fetchOpenIdConfiguration(openIdConfigUrl));
+    };
 
 type OIDCSliceState = {
     isFetching: boolean;

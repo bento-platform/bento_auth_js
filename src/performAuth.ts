@@ -1,16 +1,21 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
+import { AnyAction } from "redux";
+import { ThunkAction } from "redux-thunk";
 
-import { tokenHandoff } from "./redux/authSlice";
-import { RootState, useAppDispatch} from "./redux/store";
-
-import { buildUrlEncodedData, getIsAuthenticated, popLocalStorageItem, nop } from "./utils";
+import { DEFAULT_AUTH_SCOPE, useBentoAuthContext } from "./contexts";
+import { useOpenIdConfig } from "./hooks";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
+import { tokenHandoff } from "./redux/authSlice";
+import { AppDispatch, RootState } from "./redux/store";
+import { buildUrlEncodedData, getIsAuthenticated, logMissingAuthContext, popLocalStorageItem } from "./utils";
 
 export const LS_SIGN_IN_POPUP = "BENTO_DID_CREATE_SIGN_IN_POPUP";
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";
 export const LS_BENTO_POST_AUTH_REDIRECT = "BENTO_POST_AUTH_REDIRECT";
+
+const DEFAULT_REDIRECT = "/overview";
 
 export const createAuthURL = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
     const state = secureRandomString();
@@ -35,25 +40,40 @@ export const createAuthURL = async (authorizationEndpoint: string, clientId: str
     );
 };
 
-const DEFAULT_REDIRECT = "/overview";
-
 export const performAuth = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
     window.location.href = await createAuthURL(authorizationEndpoint, clientId, authCallbackUrl, scope);
 };
 
-const defaultAuthCodeCallback = async (
-    dispatch: ReturnType<typeof useAppDispatch>,
-    navigate: ReturnType<typeof useNavigate>,
-    code: string,
-    verifier: string,
-    onSuccessfulAuthentication: CallableFunction,
-    clientId: string,
-    authCallbackUrl: string,
-) => {
-    const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
-    await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }))
-    navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
-    await dispatch(onSuccessfulAuthentication(nop));
+export const usePerformAuth = () => {
+    const { authCallbackUrl, clientId, scope } = useBentoAuthContext();
+    const openIdConfig = useOpenIdConfig();
+    const authorizationEndpoint = openIdConfig?.["authorization_endpoint"];
+    return useCallback(async () => {
+        if (!authCallbackUrl || !clientId) {
+            logMissingAuthContext("authCallbackUrl", "clientId");
+            return;
+        }
+        if (!authorizationEndpoint) return;
+        window.location.href = await createAuthURL(
+            authorizationEndpoint, clientId, authCallbackUrl, scope ?? DEFAULT_AUTH_SCOPE);
+    }, [authCallbackUrl, clientId, authorizationEndpoint]);
+};
+
+export type AuthCodeCallbackFunction = (code: string, verifier: string) => Promise<void>;
+
+const useDefaultAuthCodeCallback = (
+    onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
+): AuthCodeCallbackFunction => {
+    const dispatch: AppDispatch = useDispatch();
+    const navigate = useNavigate();
+    const { authCallbackUrl, clientId } = useBentoAuthContext();
+
+    return useCallback(async (code: string, verifier: string) => {
+        const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
+        await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
+        navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
+        await dispatch(onSuccessfulAuthentication);
+    }, [dispatch]);
 };
 
 export const setLSNotSignedIn = () => {
@@ -62,19 +82,25 @@ export const setLSNotSignedIn = () => {
 
 export const useHandleCallback = (
     callbackPath: string,
-    onSuccessfulAuthentication: CallableFunction,
-    clientId: string,
-    authCallbackUrl: string,
-    authCodeCallback: typeof defaultAuthCodeCallback | undefined = undefined
+    onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
+    authCodeCallback: AuthCodeCallbackFunction | undefined = undefined,
+    uiErrorCallback: (message: string) => void,
 ) => {
-    const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
-    const oidcConfig = useSelector((state: RootState) => state.openIdConfiguration.data);
+    const { authCallbackUrl, clientId } = useBentoAuthContext();
+    const oidcConfig = useOpenIdConfig();
     const idTokenContents = useSelector((state: RootState) => state.auth.idTokenContents);
     const isAuthenticated = getIsAuthenticated(idTokenContents);
 
+    const defaultAuthCodeCallback = useDefaultAuthCodeCallback(onSuccessfulAuthentication);
+
     useEffect(() => {
+        if (!authCallbackUrl || !clientId) {
+            logMissingAuthContext("authCallbackUrl", "clientId");
+            return;
+        }
+
         // Ignore non-callback URLs
         if (!location.pathname.startsWith(callbackPath)) return;
 
@@ -91,6 +117,7 @@ export const useHandleCallback = (
 
         const error = params.get("error");
         if (error) {
+            uiErrorCallback(`Error encountered during sign-in: ${error}`);
             console.error(error);
             setLSNotSignedIn();
             return;
@@ -119,18 +146,21 @@ export const useHandleCallback = (
 
         const verifier = popLocalStorageItem(PKCE_LS_VERIFIER) ?? "";
 
-        (authCodeCallback ?? defaultAuthCodeCallback)(
-            dispatch,
-            navigate,
-            code,
-            verifier,
-            onSuccessfulAuthentication,
-            clientId,
-            authCallbackUrl
-        ).catch((err) => {
+        (authCodeCallback ?? defaultAuthCodeCallback)(code, verifier).catch((err) => {
             console.error(err);
             setLSNotSignedIn();
         });
-    }, [location, navigate, oidcConfig]);
+    }, [location, history, oidcConfig, defaultAuthCodeCallback]);
+};
+
+export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
+    try {
+        const didCreateSignInPopup = localStorage.getItem(LS_SIGN_IN_POPUP);
+        return (
+            window.opener && window.opener.origin === applicationUrl && didCreateSignInPopup === "true"
+        );
+    } catch {
+        return false;
+    }
 };
 
