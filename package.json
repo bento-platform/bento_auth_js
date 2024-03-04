@@ -38,7 +38,7 @@
   "homepage": "https://github.com/bento-platform/bento_auth_js#readme",
   "peerDependencies": {
     "@reduxjs/toolkit": "^1.9.7",
-    "react": ">=16.0.0",
+    "react": ">=18.0.0",
     "react-redux": "^8.1.3",
     "react-router-dom": "^6.21.1",
     "redux": "^4.2.0"

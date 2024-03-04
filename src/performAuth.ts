@@ -150,7 +150,7 @@ export const useHandleCallback = (
             console.error(err);
             setLSNotSignedIn();
         });
-    }, [location, history, oidcConfig, defaultAuthCodeCallback]);
+    }, [location, navigate, oidcConfig, defaultAuthCodeCallback]);
 };
 
 export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
