@@ -1,11 +1,11 @@
 import { useCallback, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
 
 import { DEFAULT_AUTH_SCOPE, useBentoAuthContext } from "./contexts";
-import { useOpenIdConfig } from "./hooks";
+import { useIsAuthenticated, useOpenIdConfig } from "./hooks";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
 import { tokenHandoff } from "./redux/authSlice";
 import { AppDispatch, RootState } from "./redux/store";
@@ -71,6 +71,7 @@ const useDefaultAuthCodeCallback = (
     return useCallback(async (code: string, verifier: string) => {
         const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
         await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
+        console.log(`Auth code callback redirect: lastPath=${lastPath} default=${DEFAULT_REDIRECT}`)
         navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
         await dispatch(onSuccessfulAuthentication);
     }, [dispatch]);
@@ -90,9 +91,7 @@ export const useHandleCallback = (
     const location = useLocation();
     const { authCallbackUrl, clientId } = useBentoAuthContext();
     const oidcConfig = useOpenIdConfig();
-    const idTokenContents = useSelector((state: RootState) => state.auth.idTokenContents);
-    const isAuthenticated = getIsAuthenticated(idTokenContents);
-
+    const isAuthenticated = useIsAuthenticated()
     const defaultAuthCodeCallback = useDefaultAuthCodeCallback(onSuccessfulAuthentication);
 
     useEffect(() => {
@@ -150,7 +149,7 @@ export const useHandleCallback = (
             console.error(err);
             setLSNotSignedIn();
         });
-    }, [location, navigate, oidcConfig, defaultAuthCodeCallback]);
+    }, [location, navigate, oidcConfig, defaultAuthCodeCallback, isAuthenticated]);
 };
 
 export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
