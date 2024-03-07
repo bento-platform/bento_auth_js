@@ -20,3 +20,5 @@ export {
     default as OIDCReducer,
     fetchOpenIdConfiguration
 } from "./redux/openIdConfigSlice";
+
+export type { OIDCSliceState } from "./redux/openIdConfigSlice";

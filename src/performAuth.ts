@@ -71,7 +71,6 @@ const useDefaultAuthCodeCallback = (
     return useCallback(async (code: string, verifier: string) => {
         const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
         await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
-        console.log(`Auth code callback redirect: lastPath=${lastPath} default=${DEFAULT_REDIRECT}`)
         navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
         await dispatch(onSuccessfulAuthentication);
     }, [dispatch]);

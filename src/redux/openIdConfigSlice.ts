@@ -40,7 +40,7 @@ export const fetchOpenIdConfigurationIfNecessary = (openIdConfigUrl: string):
         return dispatch(fetchOpenIdConfiguration(openIdConfigUrl));
     };
 
-type OIDCSliceState = {
+export type OIDCSliceState = {
     isFetching: boolean;
     data?: OpenIdConfigPayload;
     expiry?: number;
