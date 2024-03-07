@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
 
@@ -9,7 +9,7 @@ import { useIsAuthenticated, useOpenIdConfig } from "./hooks";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
 import { tokenHandoff } from "./redux/authSlice";
 import { AppDispatch, RootState } from "./redux/store";
-import { buildUrlEncodedData, getIsAuthenticated, logMissingAuthContext, popLocalStorageItem } from "./utils";
+import { buildUrlEncodedData, logMissingAuthContext, popLocalStorageItem } from "./utils";
 
 export const LS_SIGN_IN_POPUP = "BENTO_DID_CREATE_SIGN_IN_POPUP";
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";
@@ -90,7 +90,7 @@ export const useHandleCallback = (
     const location = useLocation();
     const { authCallbackUrl, clientId } = useBentoAuthContext();
     const oidcConfig = useOpenIdConfig();
-    const isAuthenticated = useIsAuthenticated()
+    const isAuthenticated = useIsAuthenticated();
     const defaultAuthCodeCallback = useDefaultAuthCodeCallback(onSuccessfulAuthentication);
 
     useEffect(() => {
