@@ -8,8 +8,9 @@ import { DEFAULT_AUTH_SCOPE, useBentoAuthContext } from "./contexts";
 import { useIsAuthenticated, useOpenIdConfig } from "./hooks";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
 import { tokenHandoff } from "./redux/authSlice";
-import { AppDispatch, RootState } from "./redux/store";
 import { buildUrlEncodedData, logMissingAuthContext, popLocalStorageItem } from "./utils";
+
+import type { AppDispatch, RootState } from "./redux/store";
 
 export const LS_SIGN_IN_POPUP = "BENTO_DID_CREATE_SIGN_IN_POPUP";
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";

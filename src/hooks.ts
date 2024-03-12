@@ -6,10 +6,11 @@ import { ThunkAction } from "redux-thunk";
 import { useBentoAuthContext } from "./contexts";
 import { Resource, makeResourceKey } from "./resources";
 import { fetchResourcePermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
-import { AppDispatch, RootState } from "./redux/store";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
 import { fetchOpenIdConfigurationIfNecessary } from "./redux/openIdConfigSlice";
 import { getIsAuthenticated, logMissingAuthContext, makeAuthorizationHeader } from "./utils";
+
+import type { AppDispatch, RootState  } from "./redux/store";
 
 const AUTH_RESULT_TYPE = "authResult";
 
