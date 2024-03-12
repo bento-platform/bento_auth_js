@@ -1,15 +1,16 @@
 import { useCallback, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useHistory, useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { useNavigate, useLocation } from "react-router-dom";
 import { AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
 
 import { DEFAULT_AUTH_SCOPE, useBentoAuthContext } from "./contexts";
-import { useOpenIdConfig } from "./hooks";
+import { useIsAuthenticated, useOpenIdConfig } from "./hooks";
 import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRandomString } from "./pkce";
 import { tokenHandoff } from "./redux/authSlice";
-import { RootState } from "./redux/store";
-import { buildUrlEncodedData, getIsAuthenticated, logMissingAuthContext, popLocalStorageItem } from "./utils";
+import { buildUrlEncodedData, logMissingAuthContext, popLocalStorageItem } from "./utils";
+
+import type { AppDispatch, RootState } from "./redux/store";
 
 export const LS_SIGN_IN_POPUP = "BENTO_DID_CREATE_SIGN_IN_POPUP";
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";
@@ -64,14 +65,14 @@ export type AuthCodeCallbackFunction = (code: string, verifier: string) => Promi
 const useDefaultAuthCodeCallback = (
     onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
 ): AuthCodeCallbackFunction => {
-    const dispatch = useDispatch();
-    const history = useHistory();
+    const dispatch: AppDispatch = useDispatch();
+    const navigate = useNavigate();
     const { authCallbackUrl, clientId } = useBentoAuthContext();
 
     return useCallback(async (code: string, verifier: string) => {
         const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
         await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
-        history.replace(lastPath ?? DEFAULT_REDIRECT);
+        navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
         await dispatch(onSuccessfulAuthentication);
     }, [dispatch]);
 };
@@ -86,13 +87,11 @@ export const useHandleCallback = (
     authCodeCallback: AuthCodeCallbackFunction | undefined = undefined,
     uiErrorCallback: (message: string) => void,
 ) => {
-    const history = useHistory();
+    const navigate = useNavigate();
     const location = useLocation();
     const { authCallbackUrl, clientId } = useBentoAuthContext();
     const oidcConfig = useOpenIdConfig();
-    const idTokenContents = useSelector((state: RootState) => state.auth.idTokenContents);
-    const isAuthenticated = getIsAuthenticated(idTokenContents);
-
+    const isAuthenticated = useIsAuthenticated();
     const defaultAuthCodeCallback = useDefaultAuthCodeCallback(onSuccessfulAuthentication);
 
     useEffect(() => {
@@ -109,7 +108,7 @@ export const useHandleCallback = (
 
         // If we're already authenticated, don't try to reauthenticate
         if (isAuthenticated) {
-            history.replace(DEFAULT_REDIRECT);
+            navigate(DEFAULT_REDIRECT, { replace: true });
             return;
         }
 
@@ -150,7 +149,7 @@ export const useHandleCallback = (
             console.error(err);
             setLSNotSignedIn();
         });
-    }, [location, history, oidcConfig, defaultAuthCodeCallback]);
+    }, [location, navigate, oidcConfig, defaultAuthCodeCallback, isAuthenticated]);
 };
 
 export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
@@ -163,3 +162,4 @@ export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
         return false;
     }
 };
+

@@ -6,10 +6,11 @@ import { ThunkAction } from "redux-thunk";
 import { useBentoAuthContext } from "./contexts";
 import { Resource, makeResourceKey } from "./resources";
 import { fetchResourcePermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
-import { RootState } from "./redux/store";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
 import { fetchOpenIdConfigurationIfNecessary } from "./redux/openIdConfigSlice";
 import { getIsAuthenticated, logMissingAuthContext, makeAuthorizationHeader } from "./utils";
+
+import type { AppDispatch, RootState  } from "./redux/store";
 
 const AUTH_RESULT_TYPE = "authResult";
 
@@ -28,7 +29,7 @@ export const useAuthorizationHeader = () => {
 };
 
 export const useResourcePermissions = (resource: Resource, authzUrl: string) => {
-    const dispatch = useDispatch();
+    const dispatch: AppDispatch = useDispatch();
 
     const haveAuthorizationService = !!authzUrl;
 
@@ -64,7 +65,7 @@ export const useHasResourcePermission = (resource: Resource, authzUrl: string, p
 };
 
 export const useOpenIdConfig = () => {
-    const dispatch = useDispatch();
+    const dispatch: AppDispatch = useDispatch();
     const { openIdConfigUrl } = useBentoAuthContext();
 
     useEffect(() => {
@@ -81,7 +82,7 @@ export const useOpenIdConfig = () => {
 export const useSignInPopupTokenHandoff = (
     windowMessageHandler: MutableRefObject<null | MessageHandlerFunc>
 ) => {
-    const dispatch = useDispatch();
+    const dispatch: AppDispatch = useDispatch();
     const { applicationUrl, authCallbackUrl, clientId } = useBentoAuthContext();
     useEffect(() => {
         if (!applicationUrl || !authCallbackUrl || !clientId) {
@@ -112,7 +113,7 @@ export const useSessionWorkerTokenRefresh = (
     createWorker: () => Worker,
     fetchUserDependentData: ThunkAction<void, RootState, unknown, AnyAction>,
 ) => {
-    const dispatch = useDispatch();
+    const dispatch: AppDispatch = useDispatch();
     const { clientId } = useBentoAuthContext();
 
     useEffect(() => {

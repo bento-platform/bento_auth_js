@@ -3,10 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { useBentoAuthContext } from "./contexts";
 import { useOpenIdConfig } from "./hooks";
-import { RootState } from "./redux/store";
 import { setLSNotSignedIn } from "./performAuth";
 import { signOut } from "./redux/authSlice";
 import { logMissingAuthContext } from "./utils";
+
+import type { RootState } from "./redux/store";
 
 export const usePerformSignOut = () => {
     const dispatch = useDispatch();

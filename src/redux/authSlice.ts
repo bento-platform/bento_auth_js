@@ -139,7 +139,7 @@ const nullSession = {
     refreshToken: undefined,
 };
 
-type AuthSliceState = {
+export type AuthSliceState = {
     loading: boolean;
     hasAttempted: boolean;
 
