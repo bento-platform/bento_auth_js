@@ -21,4 +21,5 @@ export {
     fetchOpenIdConfiguration
 } from "./redux/openIdConfigSlice";
 
+export type { AuthSliceState } from "./redux/authSlice";
 export type { OIDCSliceState } from "./redux/openIdConfigSlice";
