@@ -42,11 +42,15 @@ export const fetchOpenIdConfigurationIfNecessary = (openIdConfigUrl: string):
 
 export type OIDCSliceState = {
     isFetching: boolean;
+    hasAttempted: boolean;
     data?: OpenIdConfigPayload;
     expiry?: number;
 };
 const initialState: OIDCSliceState = {
     isFetching: false,
+    hasAttempted: false,
+    data: undefined,
+    expiry: undefined,
 };
 
 export const openIdConfigSlice = createSlice({
@@ -59,12 +63,14 @@ export const openIdConfigSlice = createSlice({
         });
         builder.addCase(fetchOpenIdConfiguration.fulfilled, (state, { payload }) => {
             state.isFetching = false;
+            state.hasAttempted = true;
             state.data = payload;
             state.expiry = Date.now() / 1000 + 3 * 60 * 60; // Cache for 3 hours
         });
         builder.addCase(fetchOpenIdConfiguration.rejected, (state, { error }) => {
             console.error(error);
             state.isFetching = false;
+            state.hasAttempted = true;
             state.data = undefined;
             state.expiry = undefined;
         });
