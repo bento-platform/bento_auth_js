@@ -10,7 +10,7 @@ export * from "./utils";
 
 export { 
     default as AuthReducer,
-    fetchResourcePermissions,
+    fetchResourcesPermissions,
     refreshTokens,
     signOut,
     tokenHandoff

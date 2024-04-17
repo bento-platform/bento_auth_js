@@ -105,28 +105,33 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
 type FetchPermissionPayload = {
     result: string[][];
 };
-type FetchPermissionParams = {
-    resource: Resource;
+type FetchPermissionsParams = {
+    resources: Resource[];
     authzUrl: string;
 }
-export const fetchResourcePermissions = createAsyncThunk<FetchPermissionPayload, FetchPermissionParams>(
-    "auth/FETCH_RESOURCE_PERMISSIONS",
-    async ({ resource, authzUrl }: FetchPermissionParams, { getState }) => {
+export const fetchResourcesPermissions = createAsyncThunk<FetchPermissionPayload, FetchPermissionsParams>(
+    "auth/FETCH_RESOURCES_PERMISSIONS",
+    async ({ resources, authzUrl }: FetchPermissionsParams, { getState }) => {
         const url = `${authzUrl}/policy/permissions`;
         const { auth } = getState() as RootState;
         const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.accessToken}` },
-            body: JSON.stringify({resources: [resource]}),
+            body: JSON.stringify({ resources }),
         });
         return await response.json();
     },
     {
-        condition: ({ resource }, { getState }) => {
+        condition: ({ resources }, { getState }) => {
+            // allow action to fire if at least one permission is not being fetched right now (and we need it):
+
             const { auth } = getState() as RootState;
-            const key = makeResourceKey(resource);
-            const rp = auth.resourcePermissions?.[key];
-            return !rp?.isFetching;
+
+            return resources.reduce((acc, resource) => {
+                const key = makeResourceKey(resource);
+                const rp = auth.resourcePermissions?.[key];
+                return acc || !rp?.isFetching;
+            }, false);
         },
     }
 );
@@ -258,37 +263,45 @@ export const authSlice = createSlice({
 
                 setLSNotSignedIn();
             })
-            .addCase(fetchResourcePermissions.pending, (state, { meta }) => {
-                const key = makeResourceKey(meta.arg.resource);
-                state.resourcePermissions[key] = {
-                    ...state.resourcePermissions[key],
-                    isFetching: true,
-                    hasAttempted: false,
-                    permissions: [],
-                    error: "",
-                };
+            .addCase(fetchResourcesPermissions.pending, (state, { meta }) => {
+                for (const resource of meta.arg.resources) {
+                    const key = makeResourceKey(resource);
+                    state.resourcePermissions[key] = {
+                        ...state.resourcePermissions[key],
+                        isFetching: true,
+                        hasAttempted: false,
+                        permissions: [],
+                        error: "",
+                    };
+                }
             })
-            .addCase(fetchResourcePermissions.fulfilled, (state, { meta, payload }) => {
-                const key = makeResourceKey(meta.arg.resource);
-                state.resourcePermissions[key] = {
-                    ...state.resourcePermissions[key],
-                    isFetching: false,
-                    hasAttempted: true,
-                    permissions: payload?.result?.[0] ?? [],
-                };
+            .addCase(fetchResourcesPermissions.fulfilled, (state, { meta, payload }) => {
+                const resources = meta.arg.resources;
+                for (const r in resources) {
+                    const key = makeResourceKey(resources[r]);
+                    state.resourcePermissions[key] = {
+                        ...state.resourcePermissions[key],
+                        isFetching: false,
+                        hasAttempted: true,
+                        permissions: payload?.result?.[r] ?? [],
+                    };
+                }
             })
-            .addCase(fetchResourcePermissions.rejected, (state, { meta, error }) => {
-                const key = makeResourceKey(meta.arg.resource);
+            .addCase(fetchResourcesPermissions.rejected, (state, { meta, error }) => {
                 if (error) console.error(error);
 
-                const permissionsError = error.message ?? 
-                    "An error occurred while fetching permissions for a resource";
-                state.resourcePermissions[key] = {
-                    ...state.resourcePermissions[key],
-                    isFetching: false,
-                    hasAttempted: true,
-                    error: permissionsError,
-                };
+                for (const resource of meta.arg.resources) {
+                    const key = makeResourceKey(resource);
+
+                    const permissionsError = error.message ??
+                        "An error occurred while fetching permissions for a resource";
+                    state.resourcePermissions[key] = {
+                        ...state.resourcePermissions[key],
+                        isFetching: false,
+                        hasAttempted: true,
+                        error: permissionsError,
+                    };
+                }
             });
     },
 });
