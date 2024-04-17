@@ -14,6 +14,9 @@ export const exportData = "export:data";
 
 export const viewRuns = "view:runs";
 
+export const viewNotifications = "view:notifications";
+export const createNotifications = "create:notifications";
+
 export const createProject = "create:project";
 export const editProject = "edit:project";
 export const deleteProject = "delete:project";
