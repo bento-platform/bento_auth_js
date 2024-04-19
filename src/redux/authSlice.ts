@@ -1,7 +1,7 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { JWTPayload, decodeJwt } from "jose";
 
-import { buildUrlEncodedData } from "../utils";
+import { buildUrlEncodedData, makeAuthorizationHeader } from "../utils";
 import { LS_BENTO_WAS_SIGNED_IN, setLSNotSignedIn } from "../performAuth";
 import { Resource, makeResourceKey } from "../resources";
 import { RootState } from "./store";
@@ -116,7 +116,7 @@ export const fetchResourcesPermissions = createAsyncThunk<FetchPermissionPayload
         const { auth } = getState() as RootState;
         const response = await fetch(url, {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${auth.accessToken}` },
+            headers: { "Content-Type": "application/json", ...makeAuthorizationHeader(auth.accessToken) },
             body: JSON.stringify({ resources }),
         });
         return await response.json();
