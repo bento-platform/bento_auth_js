@@ -123,15 +123,15 @@ export const fetchResourcesPermissions = createAsyncThunk<FetchPermissionsPayloa
     },
     {
         condition: ({ resources }, { getState }) => {
-            // allow action to fire if at least one permission is not being fetched right now (and we need it):
+            // allow action to fire if all requested resource permission-sets are not being fetched right now:
 
             const { auth } = getState() as RootState;
 
-            return resources.reduce((acc, resource) => {
+            return resources.every((resource) => {
                 const key = makeResourceKey(resource);
                 const rp = auth.resourcePermissions?.[key];
-                return acc || !rp?.isFetching;
-            }, false);
+                return !rp?.isFetching;
+            });
         },
     }
 );

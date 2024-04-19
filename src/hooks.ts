@@ -40,14 +40,13 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string)
     const { resourcePermissions } = useAuthState();
 
     useEffect(() => {
-        const allFetching = keys.reduce((acc, key) => acc || !!resourcePermissions[key]?.isFetching, false);
-        const allHavePermissions =
-            keys.reduce((acc, key) => acc && !!resourcePermissions[key]?.permissions?.length, true);
-        const allAttempted = keys.reduce((acc, key) => acc && !!resourcePermissions[key]?.hasAttempted, true);
+        const anyFetching = keys.some((key) => !!resourcePermissions[key]?.isFetching);
+        const allHavePermissions = keys.every((key) => !!resourcePermissions[key]?.permissions?.length);
+        const allAttempted = keys.every((key) => !!resourcePermissions[key]?.hasAttempted);
 
         // If any permissions are currently fetching, or all requested permissions have already been tried/returned, we
         // don't need to dispatch the fetch action:
-        if (!haveAuthorizationService || allFetching || allHavePermissions || allAttempted) return;
+        if (!haveAuthorizationService || anyFetching || allHavePermissions || allAttempted) return;
 
         dispatch(fetchResourcesPermissions({ resources, authzUrl }));
     }, [
