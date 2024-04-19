@@ -1,5 +1,4 @@
-import { JWTPayload } from "jose";
-import { Resource } from "./resources";
+import type { JWTPayload } from "jose";
 
 export const LS_OPENID_CONFIG_KEY = "BENTO_OPENID_CONFIG";
 
@@ -17,14 +16,14 @@ export const getIsAuthenticated = (idTokenContents: JWTPayload | null | undefine
 export const makeAuthorizationHeader = (token: string | null | undefined) =>
     (token ? { Authorization: `Bearer ${token}` } : {});
 
-export const recursiveOrderedObject = (x: Resource): unknown => {
+export const recursiveOrderedObject = (x: Record<string, unknown>): unknown => {
     if (Array.isArray(x)) {
         // Don't sort array, but DO make sure each nested object has sorted keys
         return x.map((y) => recursiveOrderedObject(y));
     } else if (typeof x === "object" && x !== null) {
         return Object.keys(x)
             .sort()
-            .reduce<Resource>((acc, y: string) => {
+            .reduce<Record<string, unknown>>((acc, y: string) => {
                 acc[y] = x[y];
                 return acc;
             }, {});
