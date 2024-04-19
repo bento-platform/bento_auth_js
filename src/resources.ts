@@ -5,11 +5,11 @@ import { recursiveOrderedObject } from "./utils";
  * Where the key is always a string identifying the resource type,
  * and the value is either a string identifying the resource ID,
  * or a boolean for everything.
- * 
+ *
  * e.g. The resource for a project with ID "project-1" would be expressed as:
  * { "project": "project-1" }
  */
-export type Resource = Record<string, string | boolean>;
+export type Resource = { everything: true } | { project: string, dataset?: string, data_type?: string };
 
 export const RESOURCE_EVERYTHING: Resource = { everything: true };
 
