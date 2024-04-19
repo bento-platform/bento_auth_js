@@ -5,7 +5,7 @@ import { ThunkAction } from "redux-thunk";
 
 import { useBentoAuthContext } from "./contexts";
 import { Resource, makeResourceKey } from "./resources";
-import { fetchResourcesPermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
+import { AuthSliceState, fetchResourcesPermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
 import { fetchOpenIdConfigurationIfNecessary } from "./redux/openIdConfigSlice";
 import { getIsAuthenticated, logMissingAuthContext, makeAuthorizationHeader } from "./utils";
@@ -16,12 +16,14 @@ const AUTH_RESULT_TYPE = "authResult";
 
 type MessageHandlerFunc = (e: MessageEvent) => void;
 
+export const useAuthState = (): AuthSliceState => useSelector((state: RootState) => state.auth);
+
 export const useIsAuthenticated = () => {
-    const { idTokenContents } = useSelector((state: RootState) => state.auth);
+    const { idTokenContents } = useAuthState();
     return getIsAuthenticated(idTokenContents);
 };
 
-export const useAccessToken = () => useSelector((state: RootState) => state.auth.accessToken);
+export const useAccessToken = () => useAuthState().accessToken;
 
 export const useAuthorizationHeader = () => {
     const accessToken = useAccessToken();
@@ -35,15 +37,18 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string)
 
     const keys = useMemo(() => resources.map((resource) => makeResourceKey(resource)), [resources]);
 
-    const { resourcePermissions } = useSelector((state: RootState) => state.auth);
+    const { resourcePermissions } = useAuthState();
 
     useEffect(() => {
-        const allFetching = keys.reduce((acc, key) => acc && !!resourcePermissions[key]?.isFetching, true);
+        const allFetching = keys.reduce((acc, key) => acc || !!resourcePermissions[key]?.isFetching, false);
         const allHavePermissions =
             keys.reduce((acc, key) => acc && !!resourcePermissions[key]?.permissions?.length, true);
         const allAttempted = keys.reduce((acc, key) => acc && !!resourcePermissions[key]?.hasAttempted, true);
 
+        // If any permissions are currently fetching, or all requested permissions have already been tried/returned, we
+        // don't need to dispatch the fetch action:
         if (!haveAuthorizationService || allFetching || allHavePermissions || allAttempted) return;
+
         dispatch(fetchResourcesPermissions({ resources, authzUrl }));
     }, [
         dispatch,
@@ -53,6 +58,7 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string)
         authzUrl,
     ]);
 
+    // Construct an object with resource keys yielding an object containing the permissions on the object
     return useMemo(() => Object.fromEntries(keys.map((key) => {
         const { permissions, isFetching, hasAttempted, error } = resourcePermissions[key] ?? {};
         return [
@@ -62,7 +68,7 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string)
                 isFetching: isFetching ?? false,
                 hasAttempted: hasAttempted ?? false,
                 error: error ?? "",
-            }
+            },
         ];
     })), [keys, resourcePermissions]);
 };

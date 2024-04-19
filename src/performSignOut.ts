@@ -1,18 +1,16 @@
 import { useCallback } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 import { useBentoAuthContext } from "./contexts";
-import { useOpenIdConfig } from "./hooks";
+import { useAuthState, useOpenIdConfig } from "./hooks";
 import { setLSNotSignedIn } from "./performAuth";
 import { signOut } from "./redux/authSlice";
 import { logMissingAuthContext } from "./utils";
 
-import type { RootState } from "./redux/store";
-
 export const usePerformSignOut = () => {
     const dispatch = useDispatch();
     const { clientId, postSignOutUrl } = useBentoAuthContext();
-    const { idToken } = useSelector((state: RootState) => state.auth);
+    const { idToken } = useAuthState();
     const openIdConfig = useOpenIdConfig();
     const endSessionEndpoint = openIdConfig?.end_session_endpoint;
 
