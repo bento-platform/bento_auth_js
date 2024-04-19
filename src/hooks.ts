@@ -5,7 +5,7 @@ import { ThunkAction } from "redux-thunk";
 
 import { useBentoAuthContext } from "./contexts";
 import { Resource, makeResourceKey } from "./resources";
-import { fetchResourcePermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
+import { AuthSliceState, fetchResourcesPermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
 import { fetchOpenIdConfigurationIfNecessary } from "./redux/openIdConfigSlice";
 import { getIsAuthenticated, logMissingAuthContext, makeAuthorizationHeader } from "./utils";
@@ -16,47 +16,66 @@ const AUTH_RESULT_TYPE = "authResult";
 
 type MessageHandlerFunc = (e: MessageEvent) => void;
 
+export const useAuthState = (): AuthSliceState => useSelector((state: RootState) => state.auth);
+
 export const useIsAuthenticated = () => {
-    const { idTokenContents } = useSelector((state: RootState) => state.auth);
+    const { idTokenContents } = useAuthState();
     return getIsAuthenticated(idTokenContents);
 };
 
-export const useAccessToken = () => useSelector((state: RootState) => state.auth.accessToken);
+export const useAccessToken = () => useAuthState().accessToken;
 
 export const useAuthorizationHeader = () => {
     const accessToken = useAccessToken();
     return useMemo(() => makeAuthorizationHeader(accessToken), [accessToken]);
 };
 
-export const useResourcePermissions = (resource: Resource, authzUrl: string) => {
+export const useResourcesPermissions = (resources: Resource[], authzUrl: string) => {
     const dispatch: AppDispatch = useDispatch();
 
     const haveAuthorizationService = !!authzUrl;
 
-    const key = useMemo(() => makeResourceKey(resource), [resource]);
+    const keys = useMemo(() => resources.map((resource) => makeResourceKey(resource)), [resources]);
 
-    const { permissions, isFetching, hasAttempted, error } =
-        useSelector((state: RootState) => state.auth.resourcePermissions?.[key]) ?? {};
+    const { resourcePermissions } = useAuthState();
 
     useEffect(() => {
-        if (!haveAuthorizationService || isFetching || permissions || hasAttempted) return;
-        dispatch(fetchResourcePermissions({ resource, authzUrl }));
+        const anyFetching = keys.some((key) => !!resourcePermissions[key]?.isFetching);
+        const allHavePermissions = keys.every((key) => !!resourcePermissions[key]?.permissions?.length);
+        const allAttempted = keys.every((key) => !!resourcePermissions[key]?.hasAttempted);
+
+        // If any permissions are currently fetching, or all requested permissions have already been tried/returned, we
+        // don't need to dispatch the fetch action:
+        if (!haveAuthorizationService || anyFetching || allHavePermissions || allAttempted) return;
+
+        dispatch(fetchResourcesPermissions({ resources, authzUrl }));
     }, [
         dispatch,
         haveAuthorizationService,
-        isFetching,
-        permissions,
-        hasAttempted,
-        resource,
+        keys,
+        resourcePermissions,
         authzUrl,
     ]);
 
-    return {
-        permissions: permissions ?? [],
-        isFetching: isFetching ?? false,
-        hasAttempted: hasAttempted ?? false,
-        error: error ?? "",
-    };
+    // Construct an object with resource keys yielding an object containing the permissions on the object
+    return useMemo(() => Object.fromEntries(keys.map((key) => {
+        const { permissions, isFetching, hasAttempted, error } = resourcePermissions[key] ?? {};
+        return [
+            key,
+            {
+                permissions: permissions ?? [],
+                isFetching: isFetching ?? false,
+                hasAttempted: hasAttempted ?? false,
+                error: error ?? "",
+            },
+        ];
+    })), [keys, resourcePermissions]);
+};
+
+export const useResourcePermissions = (resource: Resource, authzUrl: string) => {
+    const key = makeResourceKey(resource);
+    const resourcesPermissions = useResourcesPermissions([resource], authzUrl);
+    return resourcesPermissions[key];
 };
 
 export const useHasResourcePermission = (resource: Resource, authzUrl: string, permission: string) => {
