@@ -102,14 +102,14 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
     }
 );
 
-type FetchPermissionPayload = {
+type FetchPermissionsPayload = {
     result: string[][];
 };
 type FetchPermissionsParams = {
     resources: Resource[];
     authzUrl: string;
 }
-export const fetchResourcesPermissions = createAsyncThunk<FetchPermissionPayload, FetchPermissionsParams>(
+export const fetchResourcesPermissions = createAsyncThunk<FetchPermissionsPayload, FetchPermissionsParams>(
     "auth/FETCH_RESOURCES_PERMISSIONS",
     async ({ resources, authzUrl }: FetchPermissionsParams, { getState }) => {
         const url = `${authzUrl}/policy/permissions`;
