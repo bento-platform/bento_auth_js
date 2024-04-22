@@ -33,6 +33,9 @@ export const useAutoAuthenticate = (): AutoAuthenticateState => {
             // isAutoAuthenticating will be reset to `false`.
             performAuth().catch((err) => {
                 console.error(err);
+                // Prevent loop: set auto-authenticating to false and unset localStorage LS_BENTO_WAS_SIGNED_IN
+                //  - Without setting localStorage, this would trigger the effect to run again.
+                localStorage.removeItem(LS_BENTO_WAS_SIGNED_IN);
                 setIsAutoAuthenticating(false);
             });
         }
