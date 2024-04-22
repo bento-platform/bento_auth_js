@@ -30,10 +30,8 @@ export const useAuthorizationHeader = () => {
     return useMemo(() => makeAuthorizationHeader(accessToken), [accessToken]);
 };
 
-export const useResourcesPermissions = (resources: Resource[], authzUrl: string) => {
+export const useResourcesPermissions = (resources: Resource[], authzUrl: string | undefined) => {
     const dispatch: AppDispatch = useDispatch();
-
-    const haveAuthorizationService = !!authzUrl;
 
     const keys = useMemo(() => resources.map((resource) => makeResourceKey(resource)), [resources]);
 
@@ -46,12 +44,11 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string)
 
         // If any permissions are currently fetching, or all requested permissions have already been tried/returned, we
         // don't need to dispatch the fetch action:
-        if (!haveAuthorizationService || anyFetching || allHavePermissions || allAttempted) return;
+        if (!authzUrl || anyFetching || allHavePermissions || allAttempted) return;
 
         dispatch(fetchResourcesPermissions({ resources, authzUrl }));
     }, [
         dispatch,
-        haveAuthorizationService,
         keys,
         resourcePermissions,
         authzUrl,
@@ -72,13 +69,13 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string)
     })), [keys, resourcePermissions]);
 };
 
-export const useResourcePermissions = (resource: Resource, authzUrl: string) => {
+export const useResourcePermissions = (resource: Resource, authzUrl: string | undefined) => {
     const key = makeResourceKey(resource);
     const resourcesPermissions = useResourcesPermissions([resource], authzUrl);
     return resourcesPermissions[key];
 };
 
-export const useHasResourcePermission = (resource: Resource, authzUrl: string, permission: string) => {
+export const useHasResourcePermission = (resource: Resource, authzUrl: string | undefined, permission: string) => {
     const { permissions, isFetching } = useResourcePermissions(resource, authzUrl) ?? {};
     return { isFetching, hasPermission: permissions.includes(permission) };
 };
