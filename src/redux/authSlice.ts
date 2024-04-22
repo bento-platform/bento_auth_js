@@ -1,4 +1,4 @@
-import {createAction, createAsyncThunk, createSlice} from "@reduxjs/toolkit";
+import { createAction, createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { JWTPayload, decodeJwt } from "jose";
 
 import { buildUrlEncodedData, makeAuthorizationHeader } from "../utils";
