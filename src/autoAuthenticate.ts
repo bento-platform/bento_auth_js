@@ -29,6 +29,8 @@ export const useAutoAuthenticate = (): AutoAuthenticateState => {
             console.debug("auto-authenticating");
             setLSNotSignedIn();
             dispatch(setIsAutoAuthenticating(true));
+            // If performAuth() is successful, there will be a redirect. Otherwise, an error will be thrown and
+            // isAutoAuthenticating will be reset to `false`.
             performAuth().catch((err) => {
                 console.error(err);
                 setIsAutoAuthenticating(false);
