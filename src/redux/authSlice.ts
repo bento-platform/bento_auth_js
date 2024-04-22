@@ -1,4 +1,4 @@
-import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
+import {createAction, createAsyncThunk, createSlice} from "@reduxjs/toolkit";
 import { JWTPayload, decodeJwt } from "jose";
 
 import { buildUrlEncodedData, makeAuthorizationHeader } from "../utils";
@@ -102,6 +102,8 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
     }
 );
 
+export const setIsAutoAuthenticating = createAction<boolean>("auth/SET_IS_AUTO_AUTHENTICATING");
+
 type FetchPermissionsPayload = {
     result: string[][];
 };
@@ -154,6 +156,8 @@ export type AuthSliceState = {
     isRefreshingTokens: boolean;
     tokensRefreshError: string;
 
+    isAutoAuthenticating: boolean;
+
     resourcePermissions: {
         [name: string]: {
             isFetching: boolean;
@@ -179,6 +183,8 @@ const initialState: AuthSliceState = {
 
     isRefreshingTokens: false,
     tokensRefreshError: "",
+
+    isAutoAuthenticating: false,
 
     resourcePermissions: {},
 };

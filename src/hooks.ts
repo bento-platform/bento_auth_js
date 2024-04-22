@@ -30,6 +30,8 @@ export const useAuthorizationHeader = () => {
     return useMemo(() => makeAuthorizationHeader(accessToken), [accessToken]);
 };
 
+export const useIsAutoAuthenticating = () => useAuthState().isAutoAuthenticating;
+
 export const useResourcesPermissions = (resources: Resource[], authzUrl: string | undefined) => {
     const dispatch: AppDispatch = useDispatch();
 

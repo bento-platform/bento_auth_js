@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react";
-import { useIsAuthenticated, useOpenIdConfig } from "./hooks";
+import { useEffect } from "react";
+import { useIsAuthenticated, useIsAutoAuthenticating, useOpenIdConfig } from "./hooks";
 import { LS_BENTO_WAS_SIGNED_IN, setLSNotSignedIn, usePerformAuth } from "./performAuth";
+import { setIsAutoAuthenticating } from "./redux/authSlice";
+import { useAppDispatch } from "./redux/store";
 
 export interface AutoAuthenticateState {
     isAutoAuthenticating: boolean;
 }
 
 export const useAutoAuthenticate = (): AutoAuthenticateState => {
-    const [isAutoAuthenticating, setIsAutoAuthenticating] = useState(false);
+    const dispatch = useAppDispatch();
+
+    const isAutoAuthenticating = useIsAutoAuthenticating();
 
     const isAuthenticated = useIsAuthenticated();
     const openIdConfig = useOpenIdConfig();
@@ -24,7 +28,7 @@ export const useAutoAuthenticate = (): AutoAuthenticateState => {
         ) {
             console.debug("auto-authenticating");
             setLSNotSignedIn();
-            setIsAutoAuthenticating(true);
+            dispatch(setIsAutoAuthenticating(true));
             performAuth().catch(console.error);
         }
     }, [authzEndpoint, isAuthenticated, isAutoAuthenticating]);
