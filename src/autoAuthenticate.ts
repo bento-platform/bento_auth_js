@@ -29,7 +29,10 @@ export const useAutoAuthenticate = (): AutoAuthenticateState => {
             console.debug("auto-authenticating");
             setLSNotSignedIn();
             dispatch(setIsAutoAuthenticating(true));
-            performAuth().catch(console.error);
+            performAuth().catch((err) => {
+                console.error(err);
+                setIsAutoAuthenticating(false);
+            });
         }
     }, [authzEndpoint, isAuthenticated, isAutoAuthenticating]);
 
