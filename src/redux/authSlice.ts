@@ -269,6 +269,9 @@ export const authSlice = createSlice({
 
                 setLSNotSignedIn();
             })
+            .addCase(setIsAutoAuthenticating, (state, { payload }) => {
+                state.isAutoAuthenticating = payload;
+            })
             .addCase(fetchResourcesPermissions.pending, (state, { meta }) => {
                 for (const resource of meta.arg.resources) {
                     const key = makeResourceKey(resource);
