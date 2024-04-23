@@ -52,9 +52,9 @@ export const usePerformAuth = () => {
     return useCallback(async () => {
         if (!authCallbackUrl || !clientId) {
             logMissingAuthContext("authCallbackUrl", "clientId");
-            return;
+            throw new Error("Could not create auth URL; missing authCallbackUrl or clientId");
         }
-        if (!authorizationEndpoint) return;
+        if (!authorizationEndpoint) throw new Error("Could not create auth URL; missing authorization_endpoint");
         window.location.href = await createAuthURL(
             authorizationEndpoint, clientId, authCallbackUrl, scope ?? DEFAULT_AUTH_SCOPE);
     }, [authCallbackUrl, clientId, authorizationEndpoint]);

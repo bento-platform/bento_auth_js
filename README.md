@@ -56,6 +56,12 @@ import { BentoAuthContext } from "./contexts";
 // Session worker creator function must be in a constant for useSessionWorkerTokenRefresh
 const createSessionWorker = () => new SessionWorker();
 
+// Assuming fetchUserDependentData is a thunk creator:
+// Using a thunk creator as a hook argument may lead to unwanted triggers on re-renders.
+// So we store the thunk inner function of the fetchUserDependentData thunk creator in a constant, 
+// outside of the component function.
+const onAuthSuccess = fetchUserDependentData(nop);
+
 const App = () => {
     const dispatch = useDispatch();
 
@@ -64,7 +70,7 @@ const App = () => {
     const windowMessageHandler = useRef(null);
 
     // Get the OIDC config
-    const openIdConfig = useOpenIdConfig(OPENID_CONFIG_URL);
+    const openIdConfig = useOpenIdConfig();
     
     // Opens sign-in window
     const userSignIn = useOpenSignInWindowCallback(signInWindow, SIGN_IN_WINDOW_FEATURES);
@@ -73,11 +79,6 @@ const App = () => {
     const popupOpenerAuthCallback = usePopupOpenerAuthCallback();
 
     const isInAuthPopup = checkIsInAuthPopup(BENTO_URL_NO_TRAILING_SLASH);
-
-    // Assuming fetchUserDependentData is a thunk creator:
-    // Using a thunk creator as a hook argument may lead to unwanted triggers on re-renders.
-    // So we store the thunk inner function of the fetchUserDependentData thunk creator in a const.
-    const onAuthSuccess = fetchUserDependentData(nop);
 
     // Auth code callback handling 
     useHandleCallback(
