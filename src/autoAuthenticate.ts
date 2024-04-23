@@ -36,7 +36,7 @@ export const useAutoAuthenticate = (): AutoAuthenticateState => {
                 // Prevent loop: set auto-authenticating to false and unset localStorage LS_BENTO_WAS_SIGNED_IN
                 //  - Without setting localStorage, this would trigger the effect to run again.
                 localStorage.removeItem(LS_BENTO_WAS_SIGNED_IN);
-                setIsAutoAuthenticating(false);
+                dispatch(setIsAutoAuthenticating(false));
             });
         }
     }, [authzEndpoint, isAuthenticated, isAutoAuthenticating]);
