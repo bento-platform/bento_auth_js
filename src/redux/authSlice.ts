@@ -70,7 +70,7 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
     async (clientId: string , { getState }) => {
         const state = getState() as RootState;
         const url = state.openIdConfiguration.data?.token_endpoint;
-        
+
         if (!url) return;
 
         const response = await fetch(url, {
@@ -86,6 +86,13 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
         });
 
         const body = await response.json();
+
+        if (!response.ok) {
+            const errorDetail = (body && (body.error || body.error_description))
+                ? `: ${body?.error} – ${body?.error_description}`
+                : "";
+            throw new Error(`Error encountered while refreshing token${errorDetail}`);
+        }
 
         return await body;
     },
