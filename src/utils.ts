@@ -13,7 +13,7 @@ export const buildUrlEncodedData = (obj: object) =>
 export const getIsAuthenticated = (idTokenContents: JWTPayload | null | undefined) =>
     !!idTokenContents && idTokenContents.exp && Math.round(new Date().getTime() / 1000) < idTokenContents.exp;
 
-export const makeAuthorizationHeader = (token: string | null | undefined): HeadersInit | Record<string, never> =>
+export const makeAuthorizationHeader = (token: string | null | undefined): Record<string, string | never> =>
     (token ? { Authorization: `Bearer ${token}` } : {});
 
 export const recursiveOrderedObject = (x: Record<string, unknown>): unknown => {
