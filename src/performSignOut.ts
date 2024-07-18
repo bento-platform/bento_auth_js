@@ -34,5 +34,5 @@ export const usePerformSignOut = () => {
         endSessionUrl.searchParams.append("post_logout_redirect_uri", postSignOutUrl);
         setLSNotSignedIn(); // Make sure we don't immediately try to sign in again
         window.location.href = endSessionUrl.toString();
-    }, [dispatch, clientId, postSignOutUrl, idToken, openIdConfig, endSessionEndpoint]);
+    }, [dispatch, clientId, postSignOutUrl, idToken, endSessionEndpoint]);
 };

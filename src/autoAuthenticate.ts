@@ -39,7 +39,7 @@ export const useAutoAuthenticate = (): AutoAuthenticateState => {
                 dispatch(setIsAutoAuthenticating(false));
             });
         }
-    }, [authzEndpoint, isAuthenticated, isAutoAuthenticating]);
+    }, [dispatch, authzEndpoint, isAuthenticated, isAutoAuthenticating, performAuth]);
 
     return { isAutoAuthenticating };
 };

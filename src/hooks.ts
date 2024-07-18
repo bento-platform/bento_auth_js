@@ -52,6 +52,7 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string 
     }, [
         dispatch,
         keys,
+        resources,
         resourcePermissions,
         authzUrl,
     ]);
@@ -123,7 +124,7 @@ export const useSignInPopupTokenHandoff = (
                 window.removeEventListener("message", windowMessageHandler.current);
             }   
         };
-    }, [dispatch, applicationUrl, authCallbackUrl, clientId]);
+    }, [dispatch, applicationUrl, authCallbackUrl, clientId, windowMessageHandler]);
 };
 
 export const useSessionWorkerTokenRefresh = (
@@ -154,7 +155,7 @@ export const useSessionWorkerTokenRefresh = (
                 sessionWorkerRef.current = null;
             }
         };
-    }, [dispatch, createWorker, fetchUserDependentData, clientId]);
+    }, [dispatch, createWorker, fetchUserDependentData, clientId, sessionWorkerRef]);
 };
 
 export const useOpenSignInWindowCallback = (
@@ -187,7 +188,7 @@ export const useOpenSignInWindowCallback = (
                 `${windowFeatures}, top=${popupTop}, left=${popupLeft}`,
             );
         })();
-    }, [openIdConfig, clientId, authCallbackUrl, windowFeatures]);
+    }, [openIdConfig, clientId, authCallbackUrl, windowFeatures, signInWindow]);
 };
 
 export const usePopupOpenerAuthCallback = () => {
