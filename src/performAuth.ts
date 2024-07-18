@@ -74,6 +74,11 @@ const useDefaultAuthCodeCallback = (
     const { authCallbackUrl, clientId } = useBentoAuthContext();
 
     return useCallback(async (code: string, verifier: string) => {
+        if (!authCallbackUrl || !clientId) {
+            logMissingAuthContext("authCallbackUrl", "clientId");
+            return;
+        }
+
         const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
         await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
         navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
@@ -99,6 +104,8 @@ export const useHandleCallback = (
     const defaultAuthCodeCallback = useDefaultAuthCodeCallback(onSuccessfulAuthentication);
 
     useEffect(() => {
+        // Not used directly in this effect, but if we don't have it our auth callback / token handoff presumably won't
+        // work properly, so we terminate early.
         if (!authCallbackUrl || !clientId) {
             logMissingAuthContext("authCallbackUrl", "clientId");
             return;
@@ -153,7 +160,18 @@ export const useHandleCallback = (
             console.error(err);
             setLSNotSignedIn();
         });
-    }, [location, navigate, oidcConfig, defaultAuthCodeCallback, isAuthenticated]);
+    }, [
+        authCallbackUrl,
+        authCodeCallback,
+        callbackPath,
+        clientId,
+        defaultAuthCodeCallback,
+        isAuthenticated,
+        location,
+        navigate,
+        oidcConfig,
+        uiErrorCallback,
+    ]);
 };
 
 export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
