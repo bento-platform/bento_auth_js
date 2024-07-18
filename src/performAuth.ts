@@ -18,7 +18,9 @@ export const LS_BENTO_POST_AUTH_REDIRECT = "BENTO_POST_AUTH_REDIRECT";
 
 const DEFAULT_REDIRECT = "/overview";
 
-export const createAuthURL = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
+export const createAuthURL = async (
+    authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email"
+) => {
     const state = secureRandomString();
     const verifier = secureRandomString();
 
@@ -41,7 +43,9 @@ export const createAuthURL = async (authorizationEndpoint: string, clientId: str
     );
 };
 
-export const performAuth = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
+export const performAuth = async (
+    authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email"
+) => {
     window.location.href = await createAuthURL(authorizationEndpoint, clientId, authCallbackUrl, scope);
 };
 
@@ -57,7 +61,7 @@ export const usePerformAuth = () => {
         if (!authorizationEndpoint) throw new Error("Could not create auth URL; missing authorization_endpoint");
         window.location.href = await createAuthURL(
             authorizationEndpoint, clientId, authCallbackUrl, scope ?? DEFAULT_AUTH_SCOPE);
-    }, [authCallbackUrl, clientId, authorizationEndpoint]);
+    }, [authCallbackUrl, clientId, authorizationEndpoint, scope]);
 };
 
 export type AuthCodeCallbackFunction = (code: string, verifier: string) => Promise<void>;
@@ -74,7 +78,7 @@ const useDefaultAuthCodeCallback = (
         await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
         navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
         await dispatch(onSuccessfulAuthentication);
-    }, [dispatch]);
+    }, [dispatch, navigate, authCallbackUrl, clientId, onSuccessfulAuthentication]);
 };
 
 export const setLSNotSignedIn = () => {
