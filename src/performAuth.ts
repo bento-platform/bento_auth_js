@@ -18,7 +18,9 @@ export const LS_BENTO_POST_AUTH_REDIRECT = "BENTO_POST_AUTH_REDIRECT";
 
 const DEFAULT_REDIRECT = "/overview";
 
-export const createAuthURL = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
+export const createAuthURL = async (
+    authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email"
+) => {
     const state = secureRandomString();
     const verifier = secureRandomString();
 
@@ -41,7 +43,9 @@ export const createAuthURL = async (authorizationEndpoint: string, clientId: str
     );
 };
 
-export const performAuth = async (authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email") => {
+export const performAuth = async (
+    authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email"
+) => {
     window.location.href = await createAuthURL(authorizationEndpoint, clientId, authCallbackUrl, scope);
 };
 
@@ -57,7 +61,7 @@ export const usePerformAuth = () => {
         if (!authorizationEndpoint) throw new Error("Could not create auth URL; missing authorization_endpoint");
         window.location.href = await createAuthURL(
             authorizationEndpoint, clientId, authCallbackUrl, scope ?? DEFAULT_AUTH_SCOPE);
-    }, [authCallbackUrl, clientId, authorizationEndpoint]);
+    }, [authCallbackUrl, clientId, authorizationEndpoint, scope]);
 };
 
 export type AuthCodeCallbackFunction = (code: string, verifier: string) => Promise<void>;
@@ -70,11 +74,16 @@ const useDefaultAuthCodeCallback = (
     const { authCallbackUrl, clientId } = useBentoAuthContext();
 
     return useCallback(async (code: string, verifier: string) => {
+        if (!authCallbackUrl || !clientId) {
+            logMissingAuthContext("authCallbackUrl", "clientId");
+            return;
+        }
+
         const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
         await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
         navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
         await dispatch(onSuccessfulAuthentication);
-    }, [dispatch]);
+    }, [dispatch, navigate, authCallbackUrl, clientId, onSuccessfulAuthentication]);
 };
 
 export const setLSNotSignedIn = () => {
@@ -95,6 +104,8 @@ export const useHandleCallback = (
     const defaultAuthCodeCallback = useDefaultAuthCodeCallback(onSuccessfulAuthentication);
 
     useEffect(() => {
+        // Not used directly in this effect, but if we don't have it our auth callback / token handoff presumably won't
+        // work properly, so we terminate early.
         if (!authCallbackUrl || !clientId) {
             logMissingAuthContext("authCallbackUrl", "clientId");
             return;
@@ -149,7 +160,18 @@ export const useHandleCallback = (
             console.error(err);
             setLSNotSignedIn();
         });
-    }, [location, navigate, oidcConfig, defaultAuthCodeCallback, isAuthenticated]);
+    }, [
+        authCallbackUrl,
+        authCodeCallback,
+        callbackPath,
+        clientId,
+        defaultAuthCodeCallback,
+        isAuthenticated,
+        location,
+        navigate,
+        oidcConfig,
+        uiErrorCallback,
+    ]);
 };
 
 export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
