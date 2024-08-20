@@ -11,7 +11,7 @@ export const usePerformSignOut = () => {
     const dispatch = useDispatch();
     const { clientId, postSignOutUrl } = useBentoAuthContext();
     const { idToken } = useAuthState();
-    const openIdConfig = useOpenIdConfig();
+    const { data: openIdConfig } = useOpenIdConfig();
     const endSessionEndpoint = openIdConfig?.end_session_endpoint;
 
     return useCallback(() => {

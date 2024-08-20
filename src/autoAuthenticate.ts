@@ -14,7 +14,7 @@ export const useAutoAuthenticate = (): AutoAuthenticateState => {
     const isAutoAuthenticating = useIsAutoAuthenticating();
 
     const isAuthenticated = useIsAuthenticated();
-    const openIdConfig = useOpenIdConfig();
+    const { data: openIdConfig } = useOpenIdConfig();
     const performAuth = usePerformAuth();
 
     const authzEndpoint = openIdConfig?.["authorization_endpoint"];

@@ -51,7 +51,7 @@ export const performAuth = async (
 
 export const usePerformAuth = () => {
     const { authCallbackUrl, clientId, scope } = useBentoAuthContext();
-    const openIdConfig = useOpenIdConfig();
+    const { data: openIdConfig } = useOpenIdConfig();
     const authorizationEndpoint = openIdConfig?.["authorization_endpoint"];
     return useCallback(async () => {
         if (!authCallbackUrl || !clientId) {
@@ -99,7 +99,7 @@ export const useHandleCallback = (
     const navigate = useNavigate();
     const location = useLocation();
     const { authCallbackUrl, clientId } = useBentoAuthContext();
-    const oidcConfig = useOpenIdConfig();
+    const { data: oidcConfig } = useOpenIdConfig();
     const isAuthenticated = useIsAuthenticated();
     const defaultAuthCodeCallback = useDefaultAuthCodeCallback(onSuccessfulAuthentication);
 
