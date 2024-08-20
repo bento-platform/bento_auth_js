@@ -7,7 +7,7 @@ import { useBentoAuthContext } from "./contexts";
 import { Resource, makeResourceKey } from "./resources";
 import { AuthSliceState, fetchResourcesPermissions, refreshTokens, tokenHandoff } from "./redux/authSlice";
 import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
-import { fetchOpenIdConfigurationIfNecessary } from "./redux/openIdConfigSlice";
+import { fetchOpenIdConfigurationIfNecessary, type OIDCSliceState } from "./redux/openIdConfigSlice";
 import { getIsAuthenticated, logMissingAuthContext, makeAuthorizationHeader } from "./utils";
 
 import type { AppDispatch, RootState  } from "./redux/store";
@@ -83,7 +83,7 @@ export const useHasResourcePermission = (resource: Resource, authzUrl: string | 
     return { isFetching, hasPermission: permissions.includes(permission) };
 };
 
-export const useOpenIdConfig = () => {
+export const useOpenIdConfig = (): OIDCSliceState => {
     const dispatch: AppDispatch = useDispatch();
     const { openIdConfigUrl } = useBentoAuthContext();
 
@@ -95,7 +95,7 @@ export const useOpenIdConfig = () => {
         dispatch(fetchOpenIdConfigurationIfNecessary(openIdConfigUrl));
     }, [dispatch, openIdConfigUrl]);
 
-    return useSelector((state: RootState) => state.openIdConfiguration.data);
+    return useSelector((state: RootState) => state.openIdConfiguration);
 };
 
 export const useSignInPopupTokenHandoff = (
@@ -163,7 +163,7 @@ export const useOpenSignInWindowCallback = (
     windowFeatures = "scrollbars=no, toolbar=no, menubar=no, width=800, height=600"
 ) => {
     const { clientId, authCallbackUrl } = useBentoAuthContext();
-    const openIdConfig = useOpenIdConfig();
+    const { data: openIdConfig } = useOpenIdConfig();
     return useCallback(() => {
         if (!clientId || !authCallbackUrl) {
             logMissingAuthContext("clientId", "authCallbackUrl");
