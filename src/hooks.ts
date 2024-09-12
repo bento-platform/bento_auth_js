@@ -140,7 +140,8 @@ export const useSessionWorkerTokenRefresh = (
     const refreshTokenRef = useRef<string | undefined>(refreshToken);
 
     useEffect(() => {
-        // A bit hacky: we use a ref to get the refreshToken into the event listener
+        // A bit hacky: we use a ref to get the refreshToken into the worker event listener without triggering a
+        // dependency change for the useEffect below.
         refreshTokenRef.current = refreshToken;
     }, [refreshToken]);
 
