@@ -1,4 +1,4 @@
-import { MutableRefObject, useCallback, useEffect, useMemo } from "react";
+import { MutableRefObject, useCallback, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AnyAction } from "redux";
 import { ThunkAction } from "redux-thunk";
@@ -135,6 +135,16 @@ export const useSessionWorkerTokenRefresh = (
     const dispatch: AppDispatch = useDispatch();
     const { clientId } = useBentoAuthContext();
 
+    const { refreshToken } = useAuthState();
+
+    const refreshTokenRef = useRef<string | undefined>(refreshToken);
+
+    useEffect(() => {
+        // A bit hacky: we use a ref to get the refreshToken into the worker event listener without triggering a
+        // dependency change for the useEffect below.
+        refreshTokenRef.current = refreshToken;
+    }, [refreshToken]);
+
     useEffect(() => {
         if (!clientId) {
             logMissingAuthContext("clientId");
@@ -142,7 +152,12 @@ export const useSessionWorkerTokenRefresh = (
             if (!sessionWorkerRef.current) {
                 const sw = createWorker();
                 sw.addEventListener("message", () => {
-                    dispatch(refreshTokens(clientId));
+                    // It would be nice to check if we have a refresh token here without refs, but doing so would mean
+                    // unbinding and re-binding the listener every time the effect is re-executed. Instead, we can use a
+                    // ref to access the token without triggering a hook dependency change.
+                    // While the action itself also handles the no refresh token case, it pollutes the Redux and console
+                    // logs and so it's nicer to re-check here.
+                    if (refreshTokenRef.current) dispatch(refreshTokens(clientId));
                     dispatch(fetchUserDependentData);
                 });
                 sessionWorkerRef.current = sw;

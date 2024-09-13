@@ -73,6 +73,14 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
 
         if (!url) return;
 
+        const { refreshToken } = state.auth;
+
+        if (!refreshToken) {
+            // We shouldn't execute a request that we know will fail. If no refresh token is set, this action errors -
+            // the user is (should already be) signed out with no permissions.
+            throw new Error("No refresh token present");  // Throw an error to definitively reset auth slice state.
+        }
+
         const response = await fetch(url, {
             method: "POST",
             headers: {
@@ -81,7 +89,7 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
             body: buildUrlEncodedData({
                 grant_type: "refresh_token",
                 client_id: clientId,
-                refresh_token: state.auth.refreshToken,
+                refresh_token: refreshToken,
             }),
         });
 
