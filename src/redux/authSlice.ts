@@ -89,7 +89,7 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
             body: buildUrlEncodedData({
                 grant_type: "refresh_token",
                 client_id: clientId,
-                refresh_token: state.auth.refreshToken,
+                refresh_token: refreshToken,
             }),
         });
 
