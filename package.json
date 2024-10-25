@@ -2,13 +2,16 @@
   "name": "bento-auth-js",
   "version": "6.0.2",
   "description": "Authentication library for web applications of Bento-Platform",
+  "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "npx tsc",
     "prepublishOnly": "npm run build",
     "lint": "npx eslint src",
-    "buildpack": "rm -f ./packs/*.tgz && tsc && npm pack --pack-destination ./packs"
+    "lint:fix": "npx eslint src --fix",
+    "buildpack": "rm -f ./packs/*.tgz && tsc && npm pack --pack-destination ./packs",
+    "prepare": "husky"
   },
   "release": {
     "branches": [
@@ -47,17 +50,25 @@
     "jose": "^5.2.3"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.5.0",
+    "@commitlint/config-conventional": "^19.5.0",
+    "@eslint/js": "^9.13.0",
     "@semantic-release/git": "^10.0.1",
     "@types/react": "~18.3.3",
     "@types/react-router-dom": "^5.3.3",
-    "@typescript-eslint/eslint-plugin": "^7.4.0",
-    "@typescript-eslint/parser": "^7.4.0",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react": "^7.34.1",
-    "eslint-plugin-react-hooks": "^4.6.2",
+    "@typescript-eslint/parser": "^8.11.0",
+    "eslint": "^9.13.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "globals": "^15.11.0",
+    "husky": "^9.1.6",
+    "prettier": "^3.3.3",
     "react-redux": "^8.1.3",
     "react-router-dom": "^6.21.1",
     "redux": "^4.2.0",
-    "typescript": "~5.5.4"
+    "typescript": "~5.5.4",
+    "typescript-eslint": "^8.11.0"
   }
 }

@@ -8,18 +8,15 @@ export * from "./pkce";
 export * from "./resources";
 export * from "./utils";
 
-export { 
+export {
     default as AuthReducer,
     fetchResourcesPermissions,
     refreshTokens,
     signOut,
-    tokenHandoff
+    tokenHandoff,
 } from "./redux/authSlice";
 
-export {
-    default as OIDCReducer,
-    fetchOpenIdConfiguration
-} from "./redux/openIdConfigSlice";
+export { default as OIDCReducer, fetchOpenIdConfiguration } from "./redux/openIdConfigSlice";
 
 export type { AuthSliceState } from "./redux/authSlice";
 export type { OIDCSliceState } from "./redux/openIdConfigSlice";

@@ -8,11 +8,11 @@ export const PKCE_LS_VERIFIER = `${PKCE_LS_PREFIX}_verifier`;
 export const secureRandomString = (length: number = 32): string =>
     Array.from(
         crypto.getRandomValues(new Uint32Array(length)),
-        v => ("0" + v.toString(16)).slice(-2),  // Prepend with 0 to prevent slice from yielding only 1 char
+        (v) => ("0" + v.toString(16)).slice(-2), // Prepend with 0 to prevent slice from yielding only 1 char
     ).join("");
 
 /** Generates a SHA256 hash of a given string. */
-const textSHA256 = (v: string): Promise<ArrayBuffer> => crypto.subtle.digest("SHA-256", (new TextEncoder()).encode(v));
+const textSHA256 = (v: string): Promise<ArrayBuffer> => crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
 
 /** Create a URL-safe base-64 representation of an ArrayBuffer containing the bytes of a cryptographic hash. */
 const b64URLEncode = (v: ArrayBuffer): string =>

@@ -9,12 +9,11 @@ export const buildUrlEncodedData = (obj: object) =>
         return params;
     }, new URLSearchParams());
 
-
 export const getIsAuthenticated = (idTokenContents: JWTPayload | null | undefined) =>
     !!idTokenContents && idTokenContents.exp && Math.round(new Date().getTime() / 1000) < idTokenContents.exp;
 
 export const makeAuthorizationHeader = (token: string | null | undefined): Record<string, string | never> =>
-    (token ? { Authorization: `Bearer ${token}` } : {});
+    token ? { Authorization: `Bearer ${token}` } : {};
 
 export const recursiveOrderedObject = (x: Record<string, unknown>): unknown => {
     if (Array.isArray(x)) {

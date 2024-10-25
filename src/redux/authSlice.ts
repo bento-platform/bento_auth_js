@@ -19,10 +19,10 @@ type TokenHandoffParams = {
 };
 
 type TokenHandoffPayload = {
-    access_token: string,
-    expires_in: number,
-    id_token: string,
-    refresh_token: string,
+    access_token: string;
+    expires_in: number;
+    id_token: string;
+    refresh_token: string;
     error?: {
         error?: string;
         error_description?: string;
@@ -36,7 +36,8 @@ const missingOpenIdConfig: TokenHandoffError = {
     error_description: "No token endpoint available/No openIdConfiguration data",
 };
 
-export const tokenHandoff = createAsyncThunk< TokenHandoffPayload, TokenHandoffParams >("auth/TOKEN_HANDOFF",
+export const tokenHandoff = createAsyncThunk<TokenHandoffPayload, TokenHandoffParams>(
+    "auth/TOKEN_HANDOFF",
     async (handoffParams, { getState, rejectWithValue }) => {
         const state = getState() as RootState;
         const url = state.openIdConfiguration.data?.token_endpoint;
@@ -56,18 +57,18 @@ export const tokenHandoff = createAsyncThunk< TokenHandoffPayload, TokenHandoffP
         });
 
         return (await response.json()) as TokenHandoffPayload;
-    }
+    },
 );
 
 type RefreshTokenPayload = {
-    access_token: string,
-    expires_in: number,
-    id_token: string,
-    refresh_token: string,
+    access_token: string;
+    expires_in: number;
+    id_token: string;
+    refresh_token: string;
 };
 export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
     "auth/REFRESH_TOKENS",
-    async (clientId: string , { getState }) => {
+    async (clientId: string, { getState }) => {
         const state = getState() as RootState;
         const url = state.openIdConfiguration.data?.token_endpoint;
 
@@ -78,7 +79,7 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
         if (!refreshToken) {
             // We shouldn't execute a request that we know will fail. If no refresh token is set, this action errors -
             // the user is (should already be) signed out with no permissions.
-            throw new Error("No refresh token present");  // Throw an error to definitively reset auth slice state.
+            throw new Error("No refresh token present"); // Throw an error to definitively reset auth slice state.
         }
 
         const response = await fetch(url, {
@@ -96,9 +97,8 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
         const body = await response.json();
 
         if (!response.ok) {
-            const errorDetail = (body && (body.error || body.error_description))
-                ? `: ${body?.error} – ${body?.error_description}`
-                : "";
+            const errorDetail =
+                body && (body.error || body.error_description) ? `: ${body?.error} – ${body?.error_description}` : "";
             throw new Error(`Error encountered while refreshing token${errorDetail}`);
         }
 
@@ -114,7 +114,7 @@ export const refreshTokens = createAsyncThunk<RefreshTokenPayload, string>(
             const { isRefreshingTokens, refreshToken } = auth;
             return !isRefreshingTokens && refreshToken !== null;
         },
-    }
+    },
 );
 
 export const setIsAutoAuthenticating = createAction<boolean>("auth/SET_IS_AUTO_AUTHENTICATING");
@@ -125,7 +125,7 @@ type FetchPermissionsPayload = {
 type FetchPermissionsParams = {
     resources: Resource[];
     authzUrl: string;
-}
+};
 export const fetchResourcesPermissions = createAsyncThunk<FetchPermissionsPayload, FetchPermissionsParams>(
     "auth/FETCH_RESOURCES_PERMISSIONS",
     async ({ resources, authzUrl }: FetchPermissionsParams, { getState }) => {
@@ -150,7 +150,7 @@ export const fetchResourcesPermissions = createAsyncThunk<FetchPermissionsPayloa
                 return !rp?.isFetching;
             });
         },
-    }
+    },
 );
 
 const nullSession = {
@@ -205,12 +205,7 @@ const initialState: AuthSliceState = {
 };
 
 const setTokenStateFromPayload = (state: AuthSliceState, payload: TokenHandoffPayload | RefreshTokenPayload) => {
-    const {
-        access_token: accessToken,
-        expires_in: exp,
-        id_token: idToken,
-        refresh_token: refreshToken,
-    } = payload;
+    const { access_token: accessToken, expires_in: exp, id_token: idToken, refresh_token: refreshToken } = payload;
 
     state.sessionExpiry = new Date().getTime() / 1000 + exp;
     state.idToken = idToken;
@@ -225,7 +220,7 @@ export const authSlice = createSlice({
     reducers: {
         signOut: (state) => {
             setLSNotSignedIn();
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
             Object.assign(state, {
                 ...state,
                 ...nullSession,
@@ -242,7 +237,7 @@ export const authSlice = createSlice({
             .addCase(tokenHandoff.fulfilled, (state, { payload }) => {
                 state.loading = false;
                 // Reset hasAttempted for user-dependent data if we just signed in
-                state.hasAttempted = (!state.idTokenContents && payload.id_token) ? false : state.hasAttempted;
+                state.hasAttempted = !state.idTokenContents && payload.id_token ? false : state.hasAttempted;
                 setTokenStateFromPayload(state, payload);
                 state.isHandingOffCodeForToken = false;
                 localStorage.setItem(LS_BENTO_WAS_SIGNED_IN, "true");
@@ -279,7 +274,7 @@ export const authSlice = createSlice({
                     ...nullSession,
                     tokensRefreshError: refreshError,
                     resourcePermissions: {},
-                    isRefreshingTokens: false
+                    isRefreshingTokens: false,
                 });
 
                 setLSNotSignedIn();
@@ -317,8 +312,8 @@ export const authSlice = createSlice({
                 for (const resource of meta.arg.resources) {
                     const key = makeResourceKey(resource);
 
-                    const permissionsError = error.message ??
-                        "An error occurred while fetching permissions for a resource";
+                    const permissionsError =
+                        error.message ?? "An error occurred while fetching permissions for a resource";
                     state.resourcePermissions[key] = {
                         ...state.resourcePermissions[key],
                         isFetching: false,
