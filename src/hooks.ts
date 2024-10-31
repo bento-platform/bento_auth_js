@@ -10,7 +10,7 @@ import { LS_SIGN_IN_POPUP, createAuthURL } from "./performAuth";
 import { fetchOpenIdConfigurationIfNecessary, type OIDCSliceState } from "./redux/openIdConfigSlice";
 import { getIsAuthenticated, logMissingAuthContext, makeAuthorizationHeader } from "./utils";
 
-import type { AppDispatch, RootState  } from "./redux/store";
+import type { AppDispatch, RootState } from "./redux/store";
 
 const AUTH_RESULT_TYPE = "authResult";
 
@@ -49,27 +49,27 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string 
         if (!authzUrl || anyFetching || allHavePermissions || allAttempted) return;
 
         dispatch(fetchResourcesPermissions({ resources, authzUrl }));
-    }, [
-        dispatch,
-        keys,
-        resources,
-        resourcePermissions,
-        authzUrl,
-    ]);
+    }, [dispatch, keys, resources, resourcePermissions, authzUrl]);
 
     // Construct an object with resource keys yielding an object containing the permissions on the object
-    return useMemo(() => Object.fromEntries(keys.map((key) => {
-        const { permissions, isFetching, hasAttempted, error } = resourcePermissions[key] ?? {};
-        return [
-            key,
-            {
-                permissions: permissions ?? [],
-                isFetching: isFetching ?? false,
-                hasAttempted: hasAttempted ?? false,
-                error: error ?? "",
-            },
-        ];
-    })), [keys, resourcePermissions]);
+    return useMemo(
+        () =>
+            Object.fromEntries(
+                keys.map((key) => {
+                    const { permissions, isFetching, hasAttempted, error } = resourcePermissions[key] ?? {};
+                    return [
+                        key,
+                        {
+                            permissions: permissions ?? [],
+                            isFetching: isFetching ?? false,
+                            hasAttempted: hasAttempted ?? false,
+                            error: error ?? "",
+                        },
+                    ];
+                }),
+            ),
+        [keys, resourcePermissions],
+    );
 };
 
 export const useResourcePermissions = (resource: Resource, authzUrl: string | undefined) => {
@@ -98,9 +98,7 @@ export const useOpenIdConfig = (): OIDCSliceState => {
     return useSelector((state: RootState) => state.openIdConfiguration);
 };
 
-export const useSignInPopupTokenHandoff = (
-    windowMessageHandler: MutableRefObject<null | MessageHandlerFunc>
-) => {
+export const useSignInPopupTokenHandoff = (windowMessageHandler: MutableRefObject<null | MessageHandlerFunc>) => {
     const dispatch: AppDispatch = useDispatch();
     const { applicationUrl, authCallbackUrl, clientId } = useBentoAuthContext();
     useEffect(() => {
@@ -122,7 +120,7 @@ export const useSignInPopupTokenHandoff = (
         return () => {
             if (windowMessageHandler.current) {
                 window.removeEventListener("message", windowMessageHandler.current);
-            }   
+            }
         };
     }, [dispatch, applicationUrl, authCallbackUrl, clientId, windowMessageHandler]);
 };
@@ -175,7 +173,7 @@ export const useSessionWorkerTokenRefresh = (
 
 export const useOpenSignInWindowCallback = (
     signInWindow: MutableRefObject<null | Window>,
-    windowFeatures = "scrollbars=no, toolbar=no, menubar=no, width=800, height=600"
+    windowFeatures = "scrollbars=no, toolbar=no, menubar=no, width=800, height=600",
 ) => {
     const { clientId, authCallbackUrl } = useBentoAuthContext();
     const { data: openIdConfig } = useOpenIdConfig();
@@ -189,12 +187,12 @@ export const useOpenSignInWindowCallback = (
             signInWindow.current.focus();
             return;
         }
-    
+
         if (!openIdConfig || !window.top) return;
-    
+
         const popupTop = window.top.outerHeight / 2 + window.top.screenY - 350;
         const popupLeft = window.top.outerWidth / 2 + window.top.screenX - 400;
-    
+
         (async () => {
             localStorage.setItem(LS_SIGN_IN_POPUP, "true");
             signInWindow.current = window.open(
@@ -208,22 +206,25 @@ export const useOpenSignInWindowCallback = (
 
 export const usePopupOpenerAuthCallback = () => {
     const { applicationUrl } = useBentoAuthContext();
-    return useCallback(async (code: string, verifier: string) => {
-        if (!applicationUrl) {
-            logMissingAuthContext("applicationUrl");
-            return;
-        }
+    return useCallback(
+        async (code: string, verifier: string) => {
+            if (!applicationUrl) {
+                logMissingAuthContext("applicationUrl");
+                return;
+            }
 
-        if (!window.opener) return;
+            if (!window.opener) return;
 
-        // We're inside a popup window for authentication
-    
-        // Send the code and verifier to the main thread/page for authentication
-        // IMPORTANT SECURITY: provide BENTO_URL as the target origin:
-        window.opener.postMessage({ type: "authResult", code, verifier }, applicationUrl);
-    
-        // We're inside a popup window which has successfully re-authenticated the user, meaning we need to
-        // close ourselves to return focus to the original window.
-        window.close();
-    }, [applicationUrl]);
+            // We're inside a popup window for authentication
+
+            // Send the code and verifier to the main thread/page for authentication
+            // IMPORTANT SECURITY: provide BENTO_URL as the target origin:
+            window.opener.postMessage({ type: "authResult", code, verifier }, applicationUrl);
+
+            // We're inside a popup window which has successfully re-authenticated the user, meaning we need to
+            // close ourselves to return focus to the original window.
+            window.close();
+        },
+        [applicationUrl],
+    );
 };

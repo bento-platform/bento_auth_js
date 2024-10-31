@@ -1,4 +1,4 @@
-import React, {createContext, useContext} from "react";
+import React, { createContext, useContext } from "react";
 
 export interface BentoAuthContextObject {
     applicationUrl: string;
@@ -13,12 +13,12 @@ export interface BentoAuthContextObject {
 export const DEFAULT_AUTH_SCOPE = "openid email";
 
 const defaultContextObject: BentoAuthContextObject = {
-    applicationUrl: "",  // default must be false-y for 'missing context' error detection
-    openIdConfigUrl: "",  // default must be false-y for 'missing context' error detection
-    clientId: "",  // default must be false-y for 'missing context' error detection
+    applicationUrl: "", // default must be false-y for 'missing context' error detection
+    openIdConfigUrl: "", // default must be false-y for 'missing context' error detection
+    clientId: "", // default must be false-y for 'missing context' error detection
     scope: DEFAULT_AUTH_SCOPE,
-    postSignOutUrl: "",  // default must be false-y for 'missing context' error detection
-    authCallbackUrl: "",  // default must be false-y for 'missing context' error detection
+    postSignOutUrl: "", // default must be false-y for 'missing context' error detection
+    authCallbackUrl: "", // default must be false-y for 'missing context' error detection
 };
 
 export const BentoAuthContext = createContext<BentoAuthContextObject>(defaultContextObject);
@@ -28,12 +28,8 @@ export interface BentoAuthContextProviderProps {
     value: BentoAuthContextObject;
 }
 
-export const BentoAuthContextProvider = ({children, value}: BentoAuthContextProviderProps) => {
-    return (
-        <BentoAuthContext.Provider value={value}>
-            {children}
-        </BentoAuthContext.Provider>
-    );
+export const BentoAuthContextProvider = ({ children, value }: BentoAuthContextProviderProps) => {
+    return <BentoAuthContext.Provider value={value}>{children}</BentoAuthContext.Provider>;
 };
 
 export const useBentoAuthContext = () => {

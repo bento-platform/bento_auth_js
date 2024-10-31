@@ -4,6 +4,7 @@ import openIdConfiguration from "./openIdConfigSlice";
 import { useDispatch } from "react-redux";
 
 // This store is only created as a way to export its state and dispatch types
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const authStore = configureStore({
     reducer: {
         auth,

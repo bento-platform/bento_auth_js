@@ -9,13 +9,13 @@ import { recursiveOrderedObject } from "./utils";
  * e.g. The resource for a project with ID "project-1" would be expressed as:
  * { "project": "project-1" }
  */
-export type Resource = { everything: true } | { project: string, dataset?: string, data_type?: string };
+export type Resource = { everything: true } | { project: string; dataset?: string; data_type?: string };
 
 export const RESOURCE_EVERYTHING: Resource = { everything: true };
 
 export const makeProjectResource = (projectId: string): Resource => {
     return {
-        project: projectId
+        project: projectId,
     };
 };
 
@@ -34,9 +34,10 @@ export const makeProjectDatasetResource = (projectId: string, datasetId: string)
 };
 
 export const makeProjectDatasetDataTypeResource = (
-        projectId: string,
-        datasetId: string,
-        dataType: string ): Resource => {
+    projectId: string,
+    datasetId: string,
+    dataType: string,
+): Resource => {
     return {
         ...makeProjectDatasetResource(projectId, datasetId),
         data_type: dataType,

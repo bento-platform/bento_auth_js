@@ -19,7 +19,10 @@ export const LS_BENTO_POST_AUTH_REDIRECT = "BENTO_POST_AUTH_REDIRECT";
 const DEFAULT_REDIRECT = "/overview";
 
 export const createAuthURL = async (
-    authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email"
+    authorizationEndpoint: string,
+    clientId: string,
+    authCallbackUrl: string,
+    scope = "openid email",
 ) => {
     const state = secureRandomString();
     const verifier = secureRandomString();
@@ -44,7 +47,10 @@ export const createAuthURL = async (
 };
 
 export const performAuth = async (
-    authorizationEndpoint: string, clientId: string, authCallbackUrl: string, scope = "openid email"
+    authorizationEndpoint: string,
+    clientId: string,
+    authCallbackUrl: string,
+    scope = "openid email",
 ) => {
     window.location.href = await createAuthURL(authorizationEndpoint, clientId, authCallbackUrl, scope);
 };
@@ -60,7 +66,11 @@ export const usePerformAuth = () => {
         }
         if (!authorizationEndpoint) throw new Error("Could not create auth URL; missing authorization_endpoint");
         window.location.href = await createAuthURL(
-            authorizationEndpoint, clientId, authCallbackUrl, scope ?? DEFAULT_AUTH_SCOPE);
+            authorizationEndpoint,
+            clientId,
+            authCallbackUrl,
+            scope ?? DEFAULT_AUTH_SCOPE,
+        );
     }, [authCallbackUrl, clientId, authorizationEndpoint, scope]);
 };
 
@@ -73,17 +83,20 @@ const useDefaultAuthCodeCallback = (
     const navigate = useNavigate();
     const { authCallbackUrl, clientId } = useBentoAuthContext();
 
-    return useCallback(async (code: string, verifier: string) => {
-        if (!authCallbackUrl || !clientId) {
-            logMissingAuthContext("authCallbackUrl", "clientId");
-            return;
-        }
+    return useCallback(
+        async (code: string, verifier: string) => {
+            if (!authCallbackUrl || !clientId) {
+                logMissingAuthContext("authCallbackUrl", "clientId");
+                return;
+            }
 
-        const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
-        await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
-        navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
-        await dispatch(onSuccessfulAuthentication);
-    }, [dispatch, navigate, authCallbackUrl, clientId, onSuccessfulAuthentication]);
+            const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
+            await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
+            navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
+            await dispatch(onSuccessfulAuthentication);
+        },
+        [dispatch, navigate, authCallbackUrl, clientId, onSuccessfulAuthentication],
+    );
 };
 
 export const setLSNotSignedIn = () => {
@@ -177,11 +190,8 @@ export const useHandleCallback = (
 export const checkIsInAuthPopup = (applicationUrl: string): boolean => {
     try {
         const didCreateSignInPopup = localStorage.getItem(LS_SIGN_IN_POPUP);
-        return (
-            window.opener && window.opener.origin === applicationUrl && didCreateSignInPopup === "true"
-        );
+        return window.opener && window.opener.origin === applicationUrl && didCreateSignInPopup === "true";
     } catch {
         return false;
     }
 };
-
