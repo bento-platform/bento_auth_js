@@ -1,7 +1,5 @@
 import { MutableRefObject, useCallback, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { AnyAction } from "redux";
-import { ThunkAction } from "redux-thunk";
 
 import { useBentoAuthContext } from "./contexts";
 import { Resource, makeResourceKey } from "./resources";
@@ -128,7 +126,7 @@ export const useSignInPopupTokenHandoff = (windowMessageHandler: MutableRefObjec
 export const useSessionWorkerTokenRefresh = (
     sessionWorkerRef: MutableRefObject<null | Worker>,
     createWorker: () => Worker,
-    fetchUserDependentData: ThunkAction<void, RootState, unknown, AnyAction>,
+    fetchUserDependentData: (() => unknown) | undefined = undefined,
 ) => {
     const dispatch: AppDispatch = useDispatch();
     const { clientId } = useBentoAuthContext();
@@ -156,7 +154,7 @@ export const useSessionWorkerTokenRefresh = (
                     // While the action itself also handles the no refresh token case, it pollutes the Redux and console
                     // logs and so it's nicer to re-check here.
                     if (refreshTokenRef.current) dispatch(refreshTokens(clientId));
-                    dispatch(fetchUserDependentData);
+                    if (fetchUserDependentData) fetchUserDependentData();
                 });
                 sessionWorkerRef.current = sw;
             }

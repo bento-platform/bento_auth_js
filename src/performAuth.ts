@@ -1,8 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate, useLocation } from "react-router-dom";
-import { AnyAction } from "redux";
-import { ThunkAction } from "redux-thunk";
 
 import { DEFAULT_AUTH_SCOPE, useBentoAuthContext } from "./contexts";
 import { useIsAuthenticated, useOpenIdConfig } from "./hooks";
@@ -10,7 +8,7 @@ import { PKCE_LS_STATE, PKCE_LS_VERIFIER, pkceChallengeFromVerifier, secureRando
 import { tokenHandoff } from "./redux/authSlice";
 import { buildUrlEncodedData, logMissingAuthContext, popLocalStorageItem } from "./utils";
 
-import type { AppDispatch, RootState } from "./redux/store";
+import type { AppDispatch } from "./redux/store";
 
 export const LS_SIGN_IN_POPUP = "BENTO_DID_CREATE_SIGN_IN_POPUP";
 export const LS_BENTO_WAS_SIGNED_IN = "BENTO_WAS_SIGNED_IN";
@@ -77,7 +75,7 @@ export const usePerformAuth = () => {
 export type AuthCodeCallbackFunction = (code: string, verifier: string) => Promise<void>;
 
 const useDefaultAuthCodeCallback = (
-    onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
+    onSuccessfulAuthentication: (() => Promise<unknown>) | (() => unknown),
 ): AuthCodeCallbackFunction => {
     const dispatch: AppDispatch = useDispatch();
     const navigate = useNavigate();
@@ -93,7 +91,7 @@ const useDefaultAuthCodeCallback = (
             const lastPath = popLocalStorageItem(LS_BENTO_POST_AUTH_REDIRECT);
             await dispatch(tokenHandoff({ code, verifier, clientId, authCallbackUrl }));
             navigate(lastPath ?? DEFAULT_REDIRECT, { replace: true });
-            await dispatch(onSuccessfulAuthentication);
+            await onSuccessfulAuthentication();
         },
         [dispatch, navigate, authCallbackUrl, clientId, onSuccessfulAuthentication],
     );
@@ -105,7 +103,7 @@ export const setLSNotSignedIn = () => {
 
 export const useHandleCallback = (
     callbackPath: string,
-    onSuccessfulAuthentication: ThunkAction<void, RootState, unknown, AnyAction>,
+    onSuccessfulAuthentication: (() => Promise<unknown>) | (() => unknown),
     authCodeCallback: AuthCodeCallbackFunction | undefined = undefined,
     uiErrorCallback: (message: string) => void,
 ) => {
