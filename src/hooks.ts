@@ -42,8 +42,8 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string 
         const allHavePermissions = keys.every((key) => !!resourcePermissions[key]?.permissions?.length);
         const allAttempted = keys.every((key) => !!resourcePermissions[key]?.hasAttempted);
 
-        // If any permissions are currently fetching, or all requested permissions have already been tried/returned, we
-        // don't need to dispatch the fetch action:
+        // If the sign-in process is ongoing (code-token exchange), or any permissions are currently fetching, or
+        // all requested permissions have already been tried/returned, we don't need to dispatch the fetch action:
         if (!authzUrl || isHandingOffCodeForToken || anyFetching || allHavePermissions || allAttempted) return;
 
         dispatch(fetchResourcesPermissions({ resources, authzUrl }));
