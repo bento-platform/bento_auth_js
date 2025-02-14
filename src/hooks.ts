@@ -35,7 +35,7 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string 
 
     const keys = useMemo(() => resources.map((resource) => makeResourceKey(resource)), [resources]);
 
-    const { resourcePermissions } = useAuthState();
+    const { resourcePermissions, isHandingOffCodeForToken } = useAuthState();
 
     useEffect(() => {
         const anyFetching = keys.some((key) => !!resourcePermissions[key]?.isFetching);
@@ -44,10 +44,10 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string 
 
         // If any permissions are currently fetching, or all requested permissions have already been tried/returned, we
         // don't need to dispatch the fetch action:
-        if (!authzUrl || anyFetching || allHavePermissions || allAttempted) return;
+        if (!authzUrl || isHandingOffCodeForToken || anyFetching || allHavePermissions || allAttempted) return;
 
         dispatch(fetchResourcesPermissions({ resources, authzUrl }));
-    }, [dispatch, keys, resources, resourcePermissions, authzUrl]);
+    }, [dispatch, keys, resources, resourcePermissions, authzUrl, isHandingOffCodeForToken]);
 
     // Construct an object with resource keys yielding an object containing the permissions on the object
     return useMemo(
