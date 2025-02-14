@@ -30,7 +30,18 @@ export const useAuthorizationHeader = () => {
 
 export const useIsAutoAuthenticating = () => useAuthState().isAutoAuthenticating;
 
-export const useResourcesPermissions = (resources: Resource[], authzUrl: string | undefined) => {
+type BaseResourcePermissionsState = {
+    isFetching: boolean;
+    hasAttempted: boolean;
+    error: string;
+};
+type ResourcePermissionsState = BaseResourcePermissionsState & { permissions: string[] };
+type ResourceHasPermissionState = BaseResourcePermissionsState & { hasPermission: boolean };
+
+export const useResourcesPermissions = (
+    resources: Resource[],
+    authzUrl: string | undefined,
+): Record<string, ResourcePermissionsState> => {
     const dispatch: AppDispatch = useDispatch();
 
     const keys = useMemo(() => resources.map((resource) => makeResourceKey(resource)), [resources]);
@@ -70,15 +81,19 @@ export const useResourcesPermissions = (resources: Resource[], authzUrl: string 
     );
 };
 
-export const useResourcePermissions = (resource: Resource, authzUrl: string | undefined) => {
+export const useResourcePermissions = (resource: Resource, authzUrl: string | undefined): ResourcePermissionsState => {
     const key = makeResourceKey(resource);
     const resourcesPermissions = useResourcesPermissions([resource], authzUrl);
     return resourcesPermissions[key];
 };
 
-export const useHasResourcePermission = (resource: Resource, authzUrl: string | undefined, permission: string) => {
-    const { permissions, isFetching } = useResourcePermissions(resource, authzUrl) ?? {};
-    return { isFetching, hasPermission: permissions.includes(permission) };
+export const useHasResourcePermission = (
+    resource: Resource,
+    authzUrl: string | undefined,
+    permission: string,
+): ResourceHasPermissionState => {
+    const { permissions, ...props } = useResourcePermissions(resource, authzUrl) ?? {};
+    return { ...props, hasPermission: permissions.includes(permission) };
 };
 
 export const useOpenIdConfig = (): OIDCSliceState => {
