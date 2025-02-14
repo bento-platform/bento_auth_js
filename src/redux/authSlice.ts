@@ -140,15 +140,20 @@ export const fetchResourcesPermissions = createAsyncThunk<FetchPermissionsPayloa
     },
     {
         condition: ({ resources }, { getState }) => {
-            // allow action to fire if all requested resource permission-sets are not being fetched right now:
+            // allow action to fire if:
+            //  - token handoff is not currently occurring
+            //  - all requested resource permission-sets are not being fetched right now
 
             const { auth } = getState() as RootState;
 
-            return resources.every((resource) => {
-                const key = makeResourceKey(resource);
-                const rp = auth.resourcePermissions?.[key];
-                return !rp?.isFetching;
-            });
+            return (
+                !auth.isHandingOffCodeForToken &&
+                resources.every((resource) => {
+                    const key = makeResourceKey(resource);
+                    const rp = auth.resourcePermissions?.[key];
+                    return !rp?.isFetching;
+                })
+            );
         },
     },
 );
