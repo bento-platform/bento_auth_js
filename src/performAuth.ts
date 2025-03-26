@@ -28,7 +28,7 @@ export const createAuthURL = async (
     localStorage.setItem(PKCE_LS_STATE, state);
     localStorage.setItem(PKCE_LS_VERIFIER, verifier);
 
-    localStorage.setItem(LS_BENTO_POST_AUTH_REDIRECT, window.location.pathname);
+    localStorage.setItem(LS_BENTO_POST_AUTH_REDIRECT, `${window.location.pathname}${window.location.search}`);
 
     return (
         `${authorizationEndpoint}?` +
