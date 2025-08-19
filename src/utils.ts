@@ -9,8 +9,8 @@ export const buildUrlEncodedData = (obj: object) =>
         return params;
     }, new URLSearchParams());
 
-export const getIsAuthenticated = (idTokenContents: JWTPayload | null | undefined) =>
-    !!idTokenContents && idTokenContents.exp && Math.round(new Date().getTime() / 1000) < idTokenContents.exp;
+export const getIsAuthenticated = (idTokenContents: JWTPayload | null | undefined): boolean =>
+    !!idTokenContents && !!idTokenContents.exp && Math.round(new Date().getTime() / 1000) < idTokenContents.exp;
 
 export const makeAuthorizationHeader = (token: string | null | undefined): Record<string, string | never> =>
     token ? { Authorization: `Bearer ${token}` } : {};

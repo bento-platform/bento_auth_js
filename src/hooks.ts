@@ -16,7 +16,7 @@ type MessageHandlerFunc = (e: MessageEvent) => void;
 
 export const useAuthState = (): AuthSliceState => useSelector((state: RootState) => state.auth);
 
-export const useIsAuthenticated = () => {
+export const useIsAuthenticated = (): boolean => {
     const { idTokenContents } = useAuthState();
     return getIsAuthenticated(idTokenContents);
 };
