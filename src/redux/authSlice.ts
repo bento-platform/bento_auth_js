@@ -166,6 +166,47 @@ const nullSession = {
     refreshToken: undefined,
 };
 
+export const LS_BENTO_AUTH_TOKENS = "BENTO_AUTH_TOKENS";
+
+type PersistedTokens = {
+    accessToken?: string;
+    idToken?: string;
+    refreshToken?: string;
+    sessionExpiry?: number;
+};
+
+const persistTokens = (state: AuthSliceState) => {
+    const { accessToken, idToken, refreshToken, sessionExpiry } = state;
+    localStorage.setItem(LS_BENTO_AUTH_TOKENS, JSON.stringify({ accessToken, idToken, refreshToken, sessionExpiry }));
+};
+
+const clearPersistedTokens = () => {
+    localStorage.removeItem(LS_BENTO_AUTH_TOKENS);
+};
+
+const loadPersistedTokens = (): Pick<
+    AuthSliceState,
+    "accessToken" | "idToken" | "idTokenContents" | "refreshToken" | "sessionExpiry"
+> | null => {
+    const raw = localStorage.getItem(LS_BENTO_AUTH_TOKENS);
+    if (!raw) return null;
+
+    try {
+        const parsed = JSON.parse(raw) as PersistedTokens;
+        if (!parsed.refreshToken || !parsed.idToken) return null;
+
+        return {
+            accessToken: parsed.accessToken,
+            idToken: parsed.idToken,
+            idTokenContents: decodeJwt(parsed.idToken),
+            refreshToken: parsed.refreshToken,
+            sessionExpiry: parsed.sessionExpiry,
+        };
+    } catch {
+        return null;
+    }
+};
+
 export type AuthSliceState = {
     loading: boolean;
     hasAttempted: boolean;
@@ -207,6 +248,8 @@ const initialState: AuthSliceState = {
     isAutoAuthenticating: false,
 
     resourcePermissions: {},
+
+    ...loadPersistedTokens(),
 };
 
 const setTokenStateFromPayload = (state: AuthSliceState, payload: TokenHandoffPayload | RefreshTokenPayload) => {
@@ -217,6 +260,8 @@ const setTokenStateFromPayload = (state: AuthSliceState, payload: TokenHandoffPa
     state.idTokenContents = decodeJwt(idToken);
     state.accessToken = accessToken;
     state.refreshToken = refreshToken ?? state.refreshToken;
+
+    persistTokens(state);
 };
 
 export const authSlice = createSlice({
@@ -225,6 +270,7 @@ export const authSlice = createSlice({
     reducers: {
         signOut: (state) => {
             setLSNotSignedIn();
+            clearPersistedTokens();
 
             Object.assign(state, {
                 ...state,
@@ -259,6 +305,7 @@ export const authSlice = createSlice({
                     resourcePermissions: {},
                 });
                 setLSNotSignedIn();
+                clearPersistedTokens();
             })
             .addCase(refreshTokens.pending, (state) => {
                 state.isRefreshingTokens = true;
@@ -283,6 +330,7 @@ export const authSlice = createSlice({
                 });
 
                 setLSNotSignedIn();
+                clearPersistedTokens();
             })
             .addCase(setIsAutoAuthenticating, (state, { payload }) => {
                 state.isAutoAuthenticating = payload;

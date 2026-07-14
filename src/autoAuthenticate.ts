@@ -1,7 +1,8 @@
 import { useEffect } from "react";
-import { useIsAuthenticated, useIsAutoAuthenticating, useOpenIdConfig } from "./hooks";
+import { useAuthState, useIsAuthenticated, useIsAutoAuthenticating, useOpenIdConfig } from "./hooks";
 import { LS_BENTO_WAS_SIGNED_IN, setLSNotSignedIn, usePerformAuth } from "./performAuth";
-import { setIsAutoAuthenticating } from "./redux/authSlice";
+import { useBentoAuthContext } from "./contexts";
+import { refreshTokens, setIsAutoAuthenticating } from "./redux/authSlice";
 import { useAppDispatch } from "./redux/store";
 
 export interface AutoAuthenticateState {
@@ -17,6 +18,9 @@ export const useAutoAuthenticate = (): AutoAuthenticateState => {
     const { data: openIdConfig } = useOpenIdConfig();
     const performAuth = usePerformAuth();
 
+    const { refreshToken } = useAuthState();
+    const { clientId } = useBentoAuthContext();
+
     const authzEndpoint = openIdConfig?.["authorization_endpoint"];
 
     useEffect(() => {
@@ -29,6 +33,26 @@ export const useAutoAuthenticate = (): AutoAuthenticateState => {
             console.debug("auto-authenticating");
             setLSNotSignedIn();
             dispatch(setIsAutoAuthenticating(true));
+
+            if (refreshToken && clientId) {
+                // We already have a refresh token, so try a silent refresh first - no redirect, no /callback hop.
+                dispatch(refreshTokens(clientId))
+                    .unwrap()
+                    .then(() => {
+                        dispatch(setIsAutoAuthenticating(false));
+                    })
+                    .catch((err) => {
+                        console.error(err);
+                        // Refresh token is dead - fall back to the full redirect flow.
+                        performAuth().catch((err2) => {
+                            console.error(err2);
+                            localStorage.removeItem(LS_BENTO_WAS_SIGNED_IN);
+                            dispatch(setIsAutoAuthenticating(false));
+                        });
+                    });
+                return;
+            }
+
             // If performAuth() is successful, there will be a redirect. Otherwise, an error will be thrown and
             // isAutoAuthenticating will be reset to `false`.
             performAuth().catch((err) => {
@@ -39,7 +63,7 @@ export const useAutoAuthenticate = (): AutoAuthenticateState => {
                 dispatch(setIsAutoAuthenticating(false));
             });
         }
-    }, [dispatch, authzEndpoint, isAuthenticated, isAutoAuthenticating, performAuth]);
+    }, [dispatch, authzEndpoint, isAuthenticated, isAutoAuthenticating, performAuth, refreshToken, clientId]);
 
     return { isAutoAuthenticating };
 };
