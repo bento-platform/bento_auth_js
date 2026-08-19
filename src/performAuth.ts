@@ -154,7 +154,7 @@ export const useHandleCallback = (
 
         const localState = popLocalStorageItem(PKCE_LS_STATE);
         if (!localState) {
-            console.error("no local state");
+            console.debug("no local state");
             setLSNotSignedIn();
             return;
         }
