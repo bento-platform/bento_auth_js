@@ -1,4 +1,4 @@
-import { MutableRefObject, useCallback, useEffect, useMemo, useRef } from "react";
+import { RefObject, useCallback, useEffect, useMemo, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 import { useBentoAuthContext } from "./contexts";
@@ -111,7 +111,7 @@ export const useOpenIdConfig = (): OIDCSliceState => {
     return useSelector((state: RootState) => state.openIdConfiguration);
 };
 
-export const useSignInPopupTokenHandoff = (windowMessageHandler: MutableRefObject<null | MessageHandlerFunc>) => {
+export const useSignInPopupTokenHandoff = (windowMessageHandler: RefObject<null | MessageHandlerFunc>) => {
     const dispatch: AppDispatch = useDispatch();
     const { applicationUrl, authCallbackUrl, clientId } = useBentoAuthContext();
     useEffect(() => {
@@ -139,7 +139,7 @@ export const useSignInPopupTokenHandoff = (windowMessageHandler: MutableRefObjec
 };
 
 export const useSessionWorkerTokenRefresh = (
-    sessionWorkerRef: MutableRefObject<null | Worker>,
+    sessionWorkerRef: RefObject<null | Worker>,
     createWorker: () => Worker,
     fetchUserDependentData: (() => unknown) | undefined = undefined,
 ) => {
@@ -185,7 +185,7 @@ export const useSessionWorkerTokenRefresh = (
 };
 
 export const useOpenSignInWindowCallback = (
-    signInWindow: MutableRefObject<null | Window>,
+    signInWindow: RefObject<null | Window>,
     windowFeatures = "scrollbars=no, toolbar=no, menubar=no, width=800, height=600",
 ) => {
     const { clientId, authCallbackUrl } = useBentoAuthContext();
