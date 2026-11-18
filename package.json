@@ -1,9 +1,22 @@
 {
   "name": "bento-auth-js",
-  "version": "7.2.3",
+  "version": "8.0.0",
   "description": "Authentication library for web applications of Bento-Platform",
+  "type": "module",
+  "sideEffects": false,
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "react-server": "./dist/core.js",
+      "default": "./dist/index.js"
+    },
+    "./core": {
+      "types": "./dist/core.d.ts",
+      "default": "./dist/core.js"
+    }
+  },
   "scripts": {
     "build": "npx tsc",
     "prepublishOnly": "npm run build",
