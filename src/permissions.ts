@@ -6,6 +6,7 @@ export const queryDatasetLevelCounts = "query:dataset_level_counts";
 
 export const queryData = "query:data";
 export const downloadData = "download:data";
+export const downloadMetadata = "download:metadata";
 export const deleteData = "delete:data";
 
 export const ingestData = "ingest:data";
